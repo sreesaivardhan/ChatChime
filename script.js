@@ -1175,16 +1175,17 @@ function formatTimeAgo(timestamp) {
     }
 }
 
+// Enhanced: User-friendly timestamp formatting
 function formatMessageTime(timestamp) {
     const date = new Date(timestamp);
     const now = new Date();
-    
-    // If it's today, show only time
     if (date.toDateString() === now.toDateString()) {
+        // Today: show only time
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else {
+        // Other days: show date and time
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
-    
-    // If it's yesterday
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
     if (date.toDateString() === yesterday.toDateString()) {
