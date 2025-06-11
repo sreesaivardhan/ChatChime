@@ -11,9 +11,9 @@
     /* Color Palette */
     --primary-color: #daddeb;
     --primary-dark: #1bd531;
-    --primary-light: #3ae4ed;
+    --primary-light: #34ced6;
     --secondary-color: #fff30d;
-    --accent-color: #4facfe;
+    --accent-color: #308fe2;
     --success-color: #10b981;
     --warning-color: #f59e0b;
     --error-color: #ef4444;
@@ -193,8 +193,7 @@ body {
 
 .input-icon {
     position: absolute;
-    right: var(--spacing-md);
-    left: auto;
+    left: var(--spacing-md);
     top: 50%;
     transform: translateY(-50%);
     color: var(--text-muted);
@@ -833,8 +832,8 @@ body {
 
 .message.own {
     margin-left: 20%;
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    border-color: var(--primary-color);
+    background: linear-gradient(135deg, var(--accent-color), var(--primary-light));
+    border-color: var(--accent-color);
 }
 
 .message.own::before {
@@ -1362,6 +1361,23 @@ body {
 /* ========================================
    RESPONSIVE DESIGN
 ======================================== */
+@media (min-width: 769px) {
+  .mobile-menu-toggle {
+    display: none !important;
+  }
+  .sidebar {
+    position: static;
+    left: 0;
+    top: auto;
+    height: auto;
+    z-index: auto;
+    transition: none;
+  }
+  
+    /* No effect by default, but Ctrl+B can still toggle the class if user wants to hide/show via CSS */
+  
+}
+
 @media (max-width: 768px) {
     .mobile-menu-toggle {
         display: block;
@@ -1460,9 +1476,31 @@ body {
         font-size: 2.5rem;
     }
     
-    .room-list li {
-        padding: var(--spacing-sm);
+    .room-list li,
+    .room-list-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
     }
+
+    .room-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .delete-room-btn {
+        background: none;
+        border: none;
+        color: var(--danger-color, #e74c3c);
+        cursor: pointer;
+        margin-left: 12px;
+        font-size: 1em;
+        display: flex;
+        align-items: center;
+    }
+
     
     .online-users-list .user-avatar {
         width: 30px;
