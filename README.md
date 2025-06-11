@@ -7,12 +7,16 @@ A modern, local web chat application built with HTML, CSS, and JavaScript. Suppo
 ## 🚀 Features
 - **Login system** with username validation
 - **Multiple chat rooms** (create, delete, join)
-- **Message sending** with formatting (bold, italic, code)
+- **Message sending** with formatting (bold, italic, code, links)
 - **Emoji picker**
 - **Typing indicators**
-- **Online users list**
+- **Online users list & real-time presence**
+- **User-friendly timestamps** (shows time for today, date+time for older)
+- **Unread message notifications** (room highlights)
+- **Robust event listeners** for sidebar and emoji picker
 - **Persistent storage** via localStorage
 - **Responsive design** for desktop and mobile
+- **Hardened security:** XSS protection for all user content
 - **No backend required** — everything runs locally
 
 ---
@@ -58,6 +62,13 @@ chat-app/
   - Ensure `script.js` is correctly linked at the bottom of both HTML files.
 - **UI elements missing:**
   - Make sure you have not modified required element IDs/classes in the HTML.
+
+---
+
+## 🔒 Security Notes
+- All user content (messages, usernames, links) is sanitized before display to prevent XSS.
+- Only safe URLs (http, https, mailto) are allowed in messages.
+- User authentication is local and for demonstration only; do not use for production.
 
 ---
 
