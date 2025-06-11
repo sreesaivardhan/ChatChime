@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="data:,">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Application - Login</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="login-body">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <i class="fas fa-comments chat-icon"></i>
+                <h1>Welcome to ChatApp</h1>
+                <p>Connect with friends and join conversations</p>
+            </div>
+            
+            <form class="login-form" onsubmit="return false;">
+                <div class="input-group">
+                    <i class="fas fa-user input-icon"></i>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        placeholder="Enter your username" 
+                        maxlength="20"
+                        autocomplete="off"
+                        required
+                    >
+                    <span class="input-border"></span>
+                </div>
+                
+                <div class="error-message" id="error-message"></div>
+                
+                <button type="submit" class="login-btn" onclick="joinChat()">
+                    <i class="fas fa-sign-in-alt"></i>
+                    Join Chat
+                </button>
+            </form>
+            
+            <div class="login-features">
+                <div class="feature">
+                    <i class="fas fa-bolt"></i>
+                    <span>Real-time messaging</span>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-users"></i>
+                    <span>Multiple chat rooms</span>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>Mobile friendly</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="login-footer">
+            <p>&copy; 2025 ChatApp. Built with HTML, CSS & JavaScript</p>
+        </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Joining chat...</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
