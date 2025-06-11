@@ -162,7 +162,7 @@ function joinChat() {
 function initializeChatPage() {
     checkAuth();
     setupChatApplication();
-    setupChatEventListeners();
+    setupChatEventListeners(); // Ensure event listeners are attached
     loadInitialChatData();
     startRealTimeUpdates();
 }
@@ -230,6 +230,7 @@ function setupChatApplication() {
     populateEmojiPicker();
 }
 
+// Enhanced for robust event attachment and debugging
 function setupChatEventListeners() {
     // Message input events
     const messageInput = document.getElementById('message-input');
@@ -238,6 +239,7 @@ function setupChatEventListeners() {
         messageInput.addEventListener('input', handleTypingIndicator);
         messageInput.addEventListener('input', updateCharacterCount);
         messageInput.addEventListener('input', autoResizeTextarea);
+        console.log('[Event] Message input listeners attached');
     }
 
     // Mobile menu toggle
@@ -264,12 +266,19 @@ function setupChatEventListeners() {
     const sendBtn = document.getElementById('send-btn');
     if (sendBtn) {
         sendBtn.addEventListener('click', sendMessage);
+        console.log('[Event] Send button listener attached');
     }
 
     // Emoji button click
     const emojiBtn = document.getElementById('emoji-btn');
     if (emojiBtn) {
-        emojiBtn.addEventListener('click', toggleEmojiPicker);
+        // Remove any previous listeners to avoid duplicates
+        emojiBtn.replaceWith(emojiBtn.cloneNode(true));
+        const newEmojiBtn = document.getElementById('emoji-btn');
+        if (newEmojiBtn) {
+            newEmojiBtn.addEventListener('click', toggleEmojiPicker);
+            console.log('[Event] Emoji button listener attached');
+        }
     }
 
     // Emoji picker close button
@@ -365,6 +374,7 @@ function startRealTimeUpdates() {
 // ========================================
 // ROOM MANAGEMENT
 // ========================================
+// Enhanced for robust sidebar event attachment and debugging
 function loadRooms() {
     const roomList = document.getElementById('room-list');
     const rooms = getStoredData('chatRooms') || [];
@@ -373,12 +383,28 @@ function loadRooms() {
         const li = document.createElement('li');
         li.textContent = room.name;
         li.setAttribute('data-room-id', room.id);
-        li.addEventListener('click', () => joinRoom(room.id));
+        li.addEventListener('click', () => {
+            console.log('[Sidebar] Clicked room:', room.id);
+            joinRoom(room.id);
+        });
         roomList.appendChild(li);
+        console.log('[Sidebar] Added room to list:', room.id);
     });
+    // After updating room list, re-attach all sidebar event listeners
+    setTimeout(() => {
+        console.log('[Sidebar] Re-attaching event listeners after room list update');
+        setupChatEventListeners();
+    }, 0);
 }
 
 function joinRoom(roomId) {
+    if (!roomId) {
+        console.error('[joinRoom] Attempted to join undefined room!');
+        return;
+    }
+    console.log('[joinRoom] Joining room:', roomId, 'currentUsername:', currentUsername);
+    console.log('[joinRoom] ws before join:', ws);
+
     currentRoom = roomId;
     // Close previous WebSocket connection if any
     if (ws) {
@@ -388,9 +414,11 @@ function joinRoom(roomId) {
     // Connect to WebSocket server
     ws = new window.WebSocket('ws://localhost:3001');
     ws.onopen = () => {
+        console.log('[WebSocket] Connection opened for room:', roomId);
         ws.send(JSON.stringify({ type: 'join', room: roomId }));
     };
     ws.onmessage = (event) => {
+        console.log('[WebSocket] Message received:', event.data);
         const msg = JSON.parse(event.data);
         if (msg.type === 'message') {
             displayIncomingMessage(msg);
@@ -398,6 +426,9 @@ function joinRoom(roomId) {
     };
     ws.onerror = (err) => {
         console.error('WebSocket error:', err);
+    };
+    ws.onclose = (event) => {
+        console.log('[WebSocket] Connection closed for room:', roomId, event);
     };
     ws.onclose = () => {
         // Optionally handle disconnect
@@ -531,6 +562,8 @@ function handleMessageInput(e) {
 }
 
 function sendMessage() {
+    console.log('[sendMessage] Sending message, currentRoom:', currentRoom, 'currentUsername:', currentUsername);
+    console.log('[sendMessage] ws:', ws, 'readyState:', ws ? ws.readyState : 'no ws');
     const messageInput = document.getElementById('message-input');
     if (!messageInput || !currentRoom) return;
     const messageText = messageInput.value.trim();
@@ -548,6 +581,7 @@ function sendMessage() {
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(message));
     } else {
+        console.log('[sendMessage] WebSocket not open, using fallback');
         // Fallback: store locally
         displayIncomingMessage(message);
     }
@@ -562,11 +596,20 @@ function sendMessage() {
 
 
 function displayMessages() {
+    console.log('[displayMessages] Displaying messages for room:', currentRoom);
     if (!currentRoom) return;
     const messagesContainer = document.getElementById('messages');
-    if (!messagesContainer) return;
+    console.log('[displayMessages] messagesContainer:', messagesContainer);
+    if (!messagesContainer) {
+        alert('No messages container found!');
+        return;
+    }
     const allMessages = getStoredData('chatMessages') || {};
+    console.log('[displayMessages] allMessages:', allMessages);
+    console.log('[displayMessages] currentRoom:', currentRoom);
+    console.log('[displayMessages] chatMessages keys:', Object.keys(allMessages));
     const roomMessages = allMessages[currentRoom] || [];
+    console.log('[displayMessages] roomMessages:', roomMessages);
     // Clear existing messages
     messagesContainer.innerHTML = '';
     if (roomMessages.length === 0) {
@@ -577,18 +620,42 @@ function displayMessages() {
                 <p>Be the first to start the conversation!</p>
             </div>
         `;
+        // Add a visible fallback test message
+        const testDiv = document.createElement('div');
+        testDiv.textContent = 'DEBUG: No messages rendered.';
+        testDiv.style.background = 'yellow';
+        testDiv.style.color = 'black';
+        messagesContainer.appendChild(testDiv);
+        console.log('[displayMessages] Rendered fallback test message.');
         return;
     }
+    let renderedCount = 0;
     roomMessages.forEach(message => {
+        console.log('[displayMessages] Rendering message:', message);
         const messageElement = createMessageElement(message);
+        console.log('[displayMessages] Created element:', messageElement);
         messagesContainer.appendChild(messageElement);
+        renderedCount++;
     });
+    if (renderedCount === 0) {
+        const testDiv = document.createElement('div');
+        testDiv.textContent = 'DEBUG: No messages rendered in loop.';
+        testDiv.style.background = 'orange';
+        testDiv.style.color = 'black';
+        messagesContainer.appendChild(testDiv);
+        console.log('[displayMessages] Rendered fallback in loop.');
+    }
+    console.log('[displayMessages] messagesContainer.innerHTML:', messagesContainer.innerHTML);
     scrollToBottom();
 }
 
 // Real-time: add incoming message to localStorage and UI
 function displayIncomingMessage(msg) {
-    const allMessages = getStoredData('chatMessages') || {};
+    console.log('[displayIncomingMessage] Incoming message:', msg, 'currentRoom:', currentRoom, 'currentUsername:', currentUsername);
+    let allMessages = getStoredData('chatMessages');
+    if (!allMessages || typeof allMessages !== 'object' || Array.isArray(allMessages)) {
+        allMessages = {};
+    }
     if (!allMessages[msg.room]) allMessages[msg.room] = [];
     allMessages[msg.room].push(msg);
     storeData('chatMessages', allMessages);
@@ -598,42 +665,56 @@ function displayIncomingMessage(msg) {
 
 
 function createMessageElement(message) {
+    console.log('[createMessageElement] Input message:', message);
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${message.author === currentUsername ? 'own' : ''}`;
     messageDiv.setAttribute('data-message-id', message.id);
     
+    // Enhanced: Show sender and user-friendly timestamp clearly
     const formattedContent = formatMessageContent(message.content);
     const timeString = formatMessageTime(message.timestamp);
     
     messageDiv.innerHTML = `
         <div class="message-header">
             <span class="message-author">${escapeHtml(message.author)}</span>
-            <span class="message-time">${timeString}</span>
+            <span class="message-time" title="${new Date(message.timestamp).toLocaleString()}">${timeString}</span>
         </div>
         <div class="message-content">${formattedContent}</div>
     `;
-    
+    console.log('[createMessageElement] Output element:', messageDiv);
     return messageDiv;
 }
 
+// Enhanced: Harden message rendering security and sanitize links
 function formatMessageContent(content) {
     // Escape HTML first
     let formatted = escapeHtml(content);
-    
-    // Apply basic formatting
+
+    // Apply basic formatting (bold, italic, code)
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold
     formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>'); // Italic
     formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>'); // Code
-    
-    // Format links
-    formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-    
-    // Auto-link URLs
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    formatted = formatted.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener">$1</a>');
-    
+
+    // Format links with strict URL validation and rel attributes
+    formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
+        if (/^(https?:\/\/|mailto:)/.test(url)) {
+            return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`;
+        }
+        return escapeHtml(match); // If not a safe URL, escape
+    });
+
+    // Auto-link URLs (http/https only)
+    const urlRegex = /((https?:\/\/)[^\s]+)/g;
+    formatted = formatted.replace(urlRegex, (url) => {
+        if (/^(https?:\/\/)/.test(url)) {
+            return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
+        }
+        return escapeHtml(url);
+    });
+
     return formatted;
 }
+
 
 function generateMessageId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -760,6 +841,7 @@ function removeUserFromOnlineList(username) {
     storeData('onlineUsers', filteredUsers);
 }
 
+// Enhanced: Real-time user presence display
 function loadOnlineUsers() {
     const onlineUsers = getStoredData('onlineUsers') || [];
     const onlineUsersList = document.getElementById('online-users');
@@ -776,14 +858,18 @@ function loadOnlineUsers() {
     onlineUsers.forEach(user => {
         const li = document.createElement('li');
         li.innerHTML = `
-            <div class="user-avatar">
+            <div class="user-avatar ${user.online ? 'online' : ''}">
                 ${user.username.charAt(0).toUpperCase()}
             </div>
             <span class="user-name">${escapeHtml(user.username)}</span>
+            <span class="user-status ${user.online ? 'online' : 'offline'}">
+                <i class="fas fa-circle"></i> ${user.online ? 'Online' : 'Offline'}
+            </span>
         `;
         onlineUsersList.appendChild(li);
     });
 }
+
 
 function updateOnlineUsers() {
     loadOnlineUsers();
