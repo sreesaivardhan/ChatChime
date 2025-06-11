@@ -620,13 +620,7 @@ function displayMessages() {
                 <p>Be the first to start the conversation!</p>
             </div>
         `;
-        // Add a visible fallback test message
-        const testDiv = document.createElement('div');
-        testDiv.textContent = 'DEBUG: No messages rendered.';
-        testDiv.style.background = 'yellow';
-        testDiv.style.color = 'black';
-        messagesContainer.appendChild(testDiv);
-        console.log('[displayMessages] Rendered fallback test message.');
+
         return;
     }
     let renderedCount = 0;
@@ -637,15 +631,8 @@ function displayMessages() {
         messagesContainer.appendChild(messageElement);
         renderedCount++;
     });
-    if (renderedCount === 0) {
-        const testDiv = document.createElement('div');
-        testDiv.textContent = 'DEBUG: No messages rendered in loop.';
-        testDiv.style.background = 'orange';
-        testDiv.style.color = 'black';
-        messagesContainer.appendChild(testDiv);
-        console.log('[displayMessages] Rendered fallback in loop.');
-    }
-    console.log('[displayMessages] messagesContainer.innerHTML:', messagesContainer.innerHTML);
+
+
     scrollToBottom();
 }
 

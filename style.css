@@ -9,10 +9,10 @@
 
 :root {
     /* Color Palette */
-    --primary-color: #667eea;
-    --primary-dark: #5a67d8;
-    --primary-light: #7c3aed;
-    --secondary-color: #f093fb;
+    --primary-color: #daddeb;
+    --primary-dark: #1bd531;
+    --primary-light: #3ae4ed;
+    --secondary-color: #fff30d;
     --accent-color: #4facfe;
     --success-color: #10b981;
     --warning-color: #f59e0b;
@@ -30,7 +30,7 @@
     --text-primary: #ffffff;
     --text-secondary: #a1a1aa;
     --text-muted: #71717a;
-    --text-accent: #e879f9;
+    --text-accent: #bea1c2;
     
     /* Borders */
     --border-color: rgba(255, 255, 255, 0.1);
@@ -193,7 +193,8 @@ body {
 
 .input-icon {
     position: absolute;
-    left: var(--spacing-md);
+    right: var(--spacing-md);
+    left: auto;
     top: 50%;
     transform: translateY(-50%);
     color: var(--text-muted);
@@ -201,6 +202,7 @@ body {
     z-index: 2;
 }
 
+/* Fix: Prevent input icon from overlapping username text */
 .input-group input {
     width: 100%;
     padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) 3rem;
@@ -212,6 +214,7 @@ body {
     transition: var(--transition-normal);
     backdrop-filter: blur(10px);
 }
+
 
 .input-group input:focus {
     outline: none;
