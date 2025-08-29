@@ -1,7 +1,6 @@
 // ========================================
 // GLOBAL VARIABLES AND STATE MANAGEMENT
 // ========================================
-
 let currentUsername = '';
 let isTyping = false;
 let typingTimeout = null;
@@ -10,6 +9,8 @@ let lastMessageTime = 0;
 let messagePollingInterval = null;
 let typingUsers = new Set();
 let connectionStatus = 'online';
+let currentRoom = null;
+let ws = null; // WebSocket connection
 
 // Emoji data
 const emojiCategories = {
@@ -18,191 +19,60 @@ const emojiCategories = {
     'Objects': ['💻', '📱', '⌚', '📷', '💡', '🔒', '🔑', '🎯', '🚀', '⭐', '🔥', '💎', '🎉', '🎊', '🎈', '🎁', '🏆', '🥇', '🎮', '🎵']
 };
 
-// Initialize app on page load
+// ========================================
+// INITIALIZATION
+// ========================================
 window.onload = function() {
-    // --- Create Room Modal Event Listeners ---
-    document.addEventListener('DOMContentLoaded', function() {
-        // Modal elements
-        var createRoomModal = document.getElementById('create-room-modal');
-        var openModalBtn = document.getElementById('create-room-btn');
-        var closeModalBtn = document.getElementById('close-create-room-modal');
-        var cancelModalBtn = document.getElementById('cancel-create-room-modal');
-        var confirmBtn = document.getElementById('create-room-confirm');
-        var roomNameInput = document.getElementById('room-name');
-        var roomDescInput = document.getElementById('room-description');
-
-        // Open modal
-        if (openModalBtn) {
-            openModalBtn.onclick = function(e) {
-                e.preventDefault();
-                if (createRoomModal) createRoomModal.style.display = 'flex';
-                if (roomNameInput) roomNameInput.focus();
-                console.log('[DEBUG] Open create room modal');
-            };
-        }
-        // Close modal (X and Cancel)
-        if (closeModalBtn) {
-            closeModalBtn.onclick = function(e) {
-                e.preventDefault();
-                if (createRoomModal) createRoomModal.style.display = 'none';
-                if (roomNameInput) roomNameInput.value = '';
-                if (roomDescInput) roomDescInput.value = '';
-                console.log('[DEBUG] Close create room modal (X)');
-            };
-        }
-        if (cancelModalBtn) {
-            cancelModalBtn.onclick = function(e) {
-                e.preventDefault();
-                if (createRoomModal) createRoomModal.style.display = 'none';
-                if (roomNameInput) roomNameInput.value = '';
-                if (roomDescInput) roomDescInput.value = '';
-                console.log('[DEBUG] Close create room modal (Cancel)');
-            };
-        }
-        // Confirm create room
-        if (confirmBtn) {
-            confirmBtn.onclick = function(e) {
-                e.preventDefault();
-                console.log('[DEBUG] Confirm create room');
-                createRoom();
-            };
-        }
-        // Keyboard support
-        if (roomNameInput) {
-            roomNameInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    createRoom();
-                }
-            });
-        }
-        if (roomDescInput) {
-            roomDescInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && e.ctrlKey) {
-                    e.preventDefault();
-                    createRoom();
-                }
-            });
-        }
-    });
     try {
         if (window.location.pathname.includes('chat.html')) {
             initializeChatPage();
         } else {
             initializeLoginPage();
         }
-        // Mobile menu toggle
-        var mobileMenuToggle = document.getElementById('mobile-menu-toggle');
-        if (mobileMenuToggle && typeof toggleMobileMenu === 'function') {
-            mobileMenuToggle.addEventListener('click', function(e) {
-                console.log('[DEBUG] Mobile menu toggle button clicked');
-                toggleMobileMenu();
-            });
-        }
-
-        // --- Emoji Picker Button Events ---
-        var emojiBtn = document.getElementById('emoji-btn');
-        var emojiToolbarBtn = document.getElementById('emoji-toolbar-btn');
-        var emojiPicker = document.getElementById('emoji-picker');
-        var emojiCloseBtn = document.getElementById('emoji-close-btn');
-
-        function showEmojiPicker() {
-            if (emojiPicker) emojiPicker.style.display = 'block';
-        }
-        function hideEmojiPicker() {
-            if (emojiPicker) emojiPicker.style.display = 'none';
-        }
-        function toggleEmojiPickerUI() {
-            if (!emojiPicker) return;
-            if (emojiPicker.style.display === 'none' || !emojiPicker.style.display) {
-                emojiPicker.style.display = 'block';
-            } else {
-                emojiPicker.style.display = 'none';
-            }
-        }
-        if (emojiBtn) emojiBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            toggleEmojiPickerUI();
-        });
-        if (emojiToolbarBtn) emojiToolbarBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            toggleEmojiPickerUI();
-        });
-        if (emojiCloseBtn) emojiCloseBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            hideEmojiPicker();
-        });
-
-        // Click outside to close emoji picker
-        document.addEventListener('click', function(e) {
-            if (!emojiPicker) return;
-            if (
-                emojiPicker.style.display !== 'none' &&
-                !emojiPicker.contains(e.target) &&
-                e.target !== emojiBtn &&
-                e.target !== emojiToolbarBtn
-            ) {
-                emojiPicker.style.display = 'none';
-            }
-        });
-
-        // Keyboard shortcut for sidebar toggle (Ctrl+B, desktop only)
-        document.addEventListener('keydown', function(e) {
-            // Emoji picker close on Escape
-            if (e.key === 'Escape') {
-                if (emojiPicker && emojiPicker.style.display !== 'none') {
-                    emojiPicker.style.display = 'none';
-                    return;
-                }
-            }
-
-            // Ignore if focus is on input/textarea or if on mobile
-            var isInput = document.activeElement && (
-                document.activeElement.tagName === 'INPUT' ||
-                document.activeElement.tagName === 'TEXTAREA' ||
-                document.activeElement.isContentEditable
-            );
-            var isMobile = window.innerWidth <= 768;
-            if (isInput || isMobile) return;
-
-            // Ctrl+B sidebar toggle
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
-                e.preventDefault();
-                console.log('[DEBUG] Ctrl+B pressed for sidebar toggle');
-                var sidebar = document.getElementById('sidebar');
-                if (sidebar) {
-                    sidebar.classList.toggle('open');
-                    console.log('[DEBUG] Sidebar classes after toggle:', sidebar.className);
-                } else {
-                    console.log('[DEBUG] Sidebar element not found!');
-                }
-            }
-        });
+        
+        // Global keyboard shortcuts
+        setupGlobalEventListeners();
     } catch (err) {
-        // Log error to the page and console
-        var errorDiv = document.createElement('div');
-        errorDiv.style.background = '#ffe0e0';
-        errorDiv.style.color = '#900';
-        errorDiv.style.padding = '16px';
-        errorDiv.style.fontFamily = 'monospace';
-        errorDiv.style.position = 'fixed';
-        errorDiv.style.top = '0';
-        errorDiv.style.left = '0';
-        errorDiv.style.width = '100%';
-        errorDiv.style.zIndex = 9999;
-        errorDiv.innerText = 'JavaScript Error: ' + err.message;
-        document.body.appendChild(errorDiv);
+        showErrorOverlay('JavaScript Error: ' + err.message);
         console.error('JavaScript Error:', err);
     }
 }
 
+function setupGlobalEventListeners() {
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        const isInput = document.activeElement && 
+            (document.activeElement.tagName === 'INPUT' || 
+             document.activeElement.tagName === 'TEXTAREA' || 
+             document.activeElement.isContentEditable);
+        
+        const isMobile = window.innerWidth <= 768;
+        
+        // Emoji picker close on Escape
+        if (e.key === 'Escape') {
+            closeAllModals();
+            return;
+        }
+        
+        if (isInput || isMobile) return;
+        
+        // Ctrl+B sidebar toggle (desktop only)
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+            e.preventDefault();
+            toggleSidebar();
+        }
+    });
+}
 
-// Global chat state
-
-
-// Global chat state
-let currentRoom = null;
-let ws = null; // WebSocket connection
+function showErrorOverlay(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+        background: #ffe0e0; color: #900; padding: 16px; font-family: monospace;
+        position: fixed; top: 0; left: 0; width: 100%; z-index: 9999;
+    `;
+    errorDiv.textContent = message;
+    document.body.appendChild(errorDiv);
+}
 
 // ========================================
 // LOGIN PAGE FUNCTIONALITY
@@ -219,12 +89,15 @@ function initializeLoginPage() {
     
     // Add entrance animation
     setTimeout(() => {
-        document.querySelector('.login-card').classList.add('animate-in');
+        const loginCard = document.querySelector('.login-card');
+        if (loginCard) loginCard.classList.add('animate-in');
     }, 100);
 }
 
 function setupLoginEventListeners() {
     const usernameInput = document.getElementById('username');
+    const loginBtn = document.getElementById('login-btn');
+    
     if (usernameInput) {
         usernameInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
@@ -235,6 +108,10 @@ function setupLoginEventListeners() {
         usernameInput.addEventListener('input', function(e) {
             validateUsername(e.target.value);
         });
+    }
+    
+    if (loginBtn) {
+        loginBtn.addEventListener('click', joinChat);
     }
 }
 
@@ -332,7 +209,7 @@ function joinChat() {
 function initializeChatPage() {
     checkAuth();
     setupChatApplication();
-    setupChatEventListeners(); // Ensure event listeners are attached
+    setupChatEventListeners();
     loadInitialChatData();
     startRealTimeUpdates();
 }
@@ -343,10 +220,17 @@ function checkAuth() {
         window.location.href = 'index.html';
         return;
     }
+    
     currentUsername = username;
     const usernameElement = document.getElementById('current-username');
     if (usernameElement) {
         usernameElement.textContent = username;
+    }
+    
+    // Set user avatar initial
+    const userAvatar = document.querySelector('.user-avatar');
+    if (userAvatar) {
+        userAvatar.textContent = username.charAt(0).toUpperCase();
     }
 }
 
@@ -354,26 +238,26 @@ function setupChatApplication() {
     // Initialize default rooms if they don't exist
     if (!getStoredData('chatRooms')) {
         const defaultRooms = [
-            { 
+            {
                 id: 'general',
-                name: 'General', 
-                description: 'General discussion for everyone', 
+                name: 'General',
+                description: 'General discussion for everyone',
                 members: 0,
                 createdBy: 'System',
                 createdAt: new Date().toISOString()
             },
-            { 
+            {
                 id: 'tech-talk',
-                name: 'Tech Talk', 
-                description: 'Discuss technology, programming, and innovation', 
+                name: 'Tech Talk',
+                description: 'Discuss technology, programming, and innovation',
                 members: 0,
                 createdBy: 'System',
                 createdAt: new Date().toISOString()
             },
-            { 
+            {
                 id: 'random',
-                name: 'Random', 
-                description: 'Random conversations and fun discussions', 
+                name: 'Random',
+                description: 'Random conversations and fun discussions',
                 members: 0,
                 createdBy: 'System',
                 createdAt: new Date().toISOString()
@@ -381,83 +265,38 @@ function setupChatApplication() {
         ];
         storeData('chatRooms', defaultRooms);
     }
-
+    
     // Initialize messages if they don't exist
     if (!getStoredData('chatMessages')) {
         storeData('chatMessages', {});
     }
-
+    
     // Initialize online users
     if (!getStoredData('onlineUsers')) {
         storeData('onlineUsers', []);
     }
-
+    
     // Request notification permission
     requestNotificationPermission();
-
+    
     loadRooms();
     loadOnlineUsers();
     populateEmojiPicker();
 }
 
-// Enhanced for robust event attachment and debugging
 function setupChatEventListeners() {
     // --- Logout Button ---
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
         logoutBtn.onclick = logout;
     }
-
-    // --- Create Room Button ---
-    const createRoomBtn = document.getElementById('create-room-btn');
-    if (createRoomBtn) {
-        createRoomBtn.onclick = showCreateRoomModal;
-    }
-
-    const createRoomConfirmBtn = document.getElementById('create-room-confirm');
-if (createRoomConfirmBtn) {
-    createRoomConfirmBtn.onclick = createRoom;
-}
-
+    
     // --- Send Button ---
     const sendBtn = document.getElementById('send-btn');
     if (sendBtn) {
         sendBtn.onclick = sendMessage;
     }
-
-    // --- Emoji Buttons (header, toolbar, input, picker close) ---
-    const emojiBtnIds = ['emoji-btn', 'emoji-toolbar-btn', 'emoji-input-btn', 'emoji-close-btn'];
-    emojiBtnIds.forEach(id => {
-        const btn = document.getElementById(id);
-        if (btn) {
-            btn.replaceWith(btn.cloneNode(true)); // Remove previous listeners
-        }
-    });
-    emojiBtnIds.forEach(id => {
-        const btn = document.getElementById(id);
-        if (btn) {
-            btn.addEventListener('click', toggleEmojiPicker);
-            btn.addEventListener('keydown', e => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    toggleEmojiPicker();
-                }
-            });
-        }
-    });
-
-    // --- Notification Button ---
-    const notificationBtn = document.getElementById('notification-toggle-btn');
-    if (notificationBtn) {
-        notificationBtn.onclick = toggleNotifications;
-    }
-
-    // --- Clear Chat Button ---
-    const clearChatBtn = document.getElementById('clear-chat-btn');
-    if (clearChatBtn) {
-        clearChatBtn.onclick = clearChat;
-    }
-
+    
     // --- Message Input Events ---
     const messageInput = document.getElementById('message-input');
     if (messageInput) {
@@ -466,25 +305,147 @@ if (createRoomConfirmBtn) {
         messageInput.addEventListener('input', updateCharacterCount);
         messageInput.addEventListener('input', autoResizeTextarea);
     }
-
+    
     // --- Mobile menu toggle ---
     const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
     if (mobileMenuToggle) {
         mobileMenuToggle.onclick = toggleMobileMenu;
     }
-
-    // --- Notification permission events ---
-    const enableNotificationsBtn = document.getElementById('enable-notifications');
-    if (enableNotificationsBtn) {
-        enableNotificationsBtn.onclick = enableNotifications;
+    
+    // --- Notification Button ---
+    const notificationBtn = document.getElementById('notification-toggle-btn');
+    if (notificationBtn) {
+        notificationBtn.onclick = toggleNotifications;
     }
-    const dismissNotificationsBtn = document.getElementById('dismiss-notifications');
-    if (dismissNotificationsBtn) {
-        dismissNotificationsBtn.onclick = dismissNotificationRequest;
+    
+    // --- Clear Chat Button ---
+    const clearChatBtn = document.getElementById('clear-chat-btn');
+    if (clearChatBtn) {
+        clearChatBtn.onclick = clearChat;
     }
+    
+    // --- Emoji Picker Events ---
+    setupEmojiPickerEvents();
+    
+    // --- Modal Events ---
+    setupModalEvents();
+    
+    // --- Format buttons ---
+    setupFormatButtons();
+}
 
-    // --- Delete Room Modal Buttons ---
+function setupEmojiPickerEvents() {
+    const emojiBtn = document.getElementById('emoji-btn');
+    const emojiToolbarBtn = document.getElementById('emoji-toolbar-btn');
+    const emojiInputBtn = document.getElementById('emoji-input-btn');
+    const emojiPicker = document.getElementById('emoji-picker');
+    const emojiCloseBtn = document.getElementById('emoji-close-btn');
+    
+    if (emojiBtn) {
+        emojiBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleEmojiPicker();
+        });
+    }
+    
+    if (emojiToolbarBtn) {
+        emojiToolbarBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleEmojiPicker();
+        });
+    }
+    
+    if (emojiInputBtn) {
+        emojiInputBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleEmojiPicker();
+        });
+    }
+    
+    if (emojiCloseBtn) {
+        emojiCloseBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            hideEmojiPicker();
+        });
+    }
+    
+    // Click outside to close emoji picker
+    document.addEventListener('click', function(e) {
+        if (!emojiPicker) return;
+        
+        if (emojiPicker.style.display !== 'none' && 
+            !emojiPicker.contains(e.target) && 
+            e.target !== emojiBtn && 
+            e.target !== emojiToolbarBtn &&
+            e.target !== emojiInputBtn) {
+            emojiPicker.style.display = 'none';
+        }
+    });
+}
+
+function setupModalEvents() {
+    // Create Room Modal
+    const createRoomBtn = document.getElementById('create-room-btn');
+    const closeModalBtn = document.getElementById('close-create-room-modal');
+    const cancelModalBtn = document.getElementById('cancel-create-room-modal');
+    const confirmBtn = document.getElementById('create-room-confirm');
+    
+    if (createRoomBtn) {
+        createRoomBtn.onclick = showCreateRoomModal;
+    }
+    
+    if (closeModalBtn) {
+        closeModalBtn.onclick = hideCreateRoomModal;
+    }
+    
+    if (cancelModalBtn) {
+        cancelModalBtn.onclick = hideCreateRoomModal;
+    }
+    
+    if (confirmBtn) {
+        confirmBtn.onclick = createRoom;
+    }
+    
+    // Delete Room Modal
     setupDeleteRoomModalEvents();
+}
+
+function setupDeleteRoomModalEvents() {
+    const confirmDeleteBtn = document.getElementById('confirm-delete-room');
+    const cancelDeleteBtn = document.getElementById('cancel-delete-room');
+    const closeDeleteBtn = document.getElementById('close-delete-room-modal');
+    
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.onclick = confirmDeleteRoom;
+    }
+    
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.onclick = hideDeleteRoomModal;
+    }
+    
+    if (closeDeleteBtn) {
+        closeDeleteBtn.onclick = hideDeleteRoomModal;
+    }
+}
+
+function setupFormatButtons() {
+    // Bold button
+    const boldBtn = document.getElementById('bold-btn');
+    if (boldBtn) {
+        boldBtn.onclick = () => insertFormatting('**', '**');
+    }
+    
+    // Italic button
+    const italicBtn = document.getElementById('italic-btn');
+    if (italicBtn) {
+        italicBtn.onclick = () => insertFormatting('*', '*');
+    }
+    
+    // Code button
+    const codeBtn = document.getElementById('code-btn');
+    if (codeBtn) {
+        codeBtn.onclick = () => insertFormatting('`', '`');
+    }
 }
 
 function loadInitialChatData() {
@@ -501,7 +462,7 @@ function loadInitialChatData() {
 }
 
 function startRealTimeUpdates() {
-    // No polling needed for messages, only update online users and typing
+    // Update typing indicators and online users
     setInterval(() => {
         updateTypingIndicator();
         updateOnlineUsers();
@@ -511,126 +472,42 @@ function startRealTimeUpdates() {
 // ========================================
 // ROOM MANAGEMENT
 // ========================================
-// Enhanced for robust sidebar event attachment and debugging
 function loadRooms() {
     const roomList = document.getElementById('room-list');
     const rooms = getStoredData('chatRooms') || [];
+    
+    if (!roomList) return;
+    
     roomList.innerHTML = '';
+    
     rooms.forEach(room => {
         const li = document.createElement('li');
         li.className = 'room-list-item';
         li.setAttribute('data-room-id', room.id);
-    
-        // Create a span for the room name
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'room-name';
-        nameSpan.textContent = room.name;
-        li.appendChild(nameSpan);
-    
-        // Room delete button (only for creator)
-        if (room.createdBy === currentUsername) {
-            const delBtn = document.createElement('button');
-            delBtn.className = 'delete-room-btn';
-            delBtn.innerHTML = '<i class="fas fa-trash"></i>';
-            delBtn.title = 'Delete room';
-            delBtn.setAttribute('aria-label', `Delete room ${room.name}`);
-            delBtn.onclick = (e) => {
-                e.stopPropagation();
-                deleteRoom(room.id);
-            };
-            li.appendChild(delBtn);
-        }
-    
-        li.addEventListener('click', () => {
-            console.log('[Sidebar] Clicked room:', room.id);
-            joinRoom(room.id);
+        
+        // Create room content
+        li.innerHTML = `
+            <div class="room-content">
+                <div class="room-name">${escapeHtml(room.name)}</div>
+                <div class="room-description">${escapeHtml(room.description)}</div>
+                <div class="room-meta">
+                    <span>${room.members} members</span>
+                    <span>${formatDate(room.createdAt)}</span>
+                </div>
+            </div>
+            ${room.createdBy === currentUsername ? 
+                `<button class="delete-room-btn" onclick="showDeleteRoomModal('${room.id}')" title="Delete room">🗑️</button>` : 
+                ''}
+        `;
+        
+        li.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('delete-room-btn')) {
+                joinRoom(room.id);
+            }
         });
+        
         roomList.appendChild(li);
     });
-    // After updating room list, re-attach all sidebar event listeners
-    setTimeout(() => {
-        console.log('[Sidebar] Re-attaching event listeners after room list update');
-        setupChatEventListeners();
-    }, 0);
-}
-
-function joinRoom(roomId) {
-    if (!roomId) {
-        console.error('[joinRoom] Attempted to join undefined room!');
-        return;
-    }
-    console.log('[joinRoom] Joining room:', roomId, 'currentUsername:', currentUsername);
-    console.log('[joinRoom] ws before join:', ws);
-
-    currentRoom = roomId;
-    // Close previous WebSocket connection if any
-    if (ws) {
-        ws.close();
-        ws = null;
-    }
-    // Connect to WebSocket server
-    ws = new window.WebSocket('ws://localhost:3001');
-    ws.onopen = () => {
-        console.log('[WebSocket] Connection opened for room:', roomId);
-        ws.send(JSON.stringify({ type: 'join', room: roomId }));
-    };
-    ws.onmessage = (event) => {
-        console.log('[WebSocket] Message received:', event.data);
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'message') {
-            displayIncomingMessage(msg);
-        }
-    };
-    ws.onerror = (err) => {
-        console.error('WebSocket error:', err);
-    };
-    ws.onclose = (event) => {
-        console.log('[WebSocket] Connection closed for room:', roomId, event);
-    };
-    ws.onclose = () => {
-        // Optionally handle disconnect
-    };
-    const rooms = getStoredData('chatRooms') || [];
-    const room = rooms.find(r => r.id === roomId);
-    
-    if (!room) return;
-    
-    // Update current room
-    currentRoom = roomId;
-    
-    // Update UI
-    const currentRoomElement = document.getElementById('current-room');
-    const roomMembersElement = document.getElementById('room-members');
-    
-    if (currentRoomElement) {
-        currentRoomElement.textContent = room.name;
-    }
-    
-    if (roomMembersElement) {
-        roomMembersElement.textContent = `${room.members} members`;
-    }
-    
-    // Update room selection in UI
-    document.querySelectorAll('.room-list li').forEach(li => {
-        li.classList.remove('active');
-    });
-    
-    const activeRoom = document.querySelector(`[data-room-id="${roomId}"]`);
-    if (activeRoom) {
-        activeRoom.classList.add('active');
-    }
-    
-    // Load messages for this room
-    displayMessages();
-    
-    // Clear welcome message
-    clearWelcomeMessage();
-    
-    // Focus on message input
-    const messageInput = document.getElementById('message-input');
-    if (messageInput) {
-        messageInput.focus();
-    }
 }
 
 function showCreateRoomModal() {
@@ -641,7 +518,6 @@ function showCreateRoomModal() {
         if (roomNameInput) {
             roomNameInput.focus();
         }
-        console.log('[DEBUG] showCreateRoomModal called');
     }
 }
 
@@ -654,12 +530,10 @@ function hideCreateRoomModal() {
         const roomDescInput = document.getElementById('room-description');
         if (roomNameInput) roomNameInput.value = '';
         if (roomDescInput) roomDescInput.value = '';
-        console.log('[DEBUG] hideCreateRoomModal called');
     }
 }
 
 function createRoom() {
-    console.log('[DEBUG] createRoom called');
     const roomNameInput = document.getElementById('room-name');
     const roomDescInput = document.getElementById('room-description');
     
@@ -707,8 +581,155 @@ function createRoom() {
     showNotification('Room created successfully!', 'success');
 }
 
+function showDeleteRoomModal(roomId) {
+    const rooms = getStoredData('chatRooms') || [];
+    const room = rooms.find(r => r.id === roomId);
+    
+    if (!room) return;
+    
+    const modal = document.getElementById('delete-room-modal');
+    const roomNameSpan = document.getElementById('delete-room-name');
+    
+    if (modal && roomNameSpan) {
+        roomNameSpan.textContent = room.name;
+        modal.style.display = 'flex';
+        modal.setAttribute('data-room-id', roomId);
+    }
+}
+
+function hideDeleteRoomModal() {
+    const modal = document.getElementById('delete-room-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.removeAttribute('data-room-id');
+    }
+}
+
+function confirmDeleteRoom() {
+    const modal = document.getElementById('delete-room-modal');
+    const roomId = modal ? modal.getAttribute('data-room-id') : null;
+    
+    if (!roomId) return;
+    
+    deleteRoom(roomId);
+    hideDeleteRoomModal();
+}
+
+function deleteRoom(roomId) {
+    const rooms = getStoredData('chatRooms') || [];
+    const updatedRooms = rooms.filter(room => room.id !== roomId);
+    
+    storeData('chatRooms', updatedRooms);
+    
+    // Delete messages for this room
+    const allMessages = getStoredData('chatMessages') || {};
+    delete allMessages[roomId];
+    storeData('chatMessages', allMessages);
+    
+    // If current room was deleted, switch to general
+    if (currentRoom === roomId) {
+        const generalRoom = updatedRooms.find(r => r.id === 'general');
+        if (generalRoom) {
+            joinRoom('general');
+        } else if (updatedRooms.length > 0) {
+            joinRoom(updatedRooms[0].id);
+        } else {
+            currentRoom = null;
+            displayMessages();
+        }
+    }
+    
+    loadRooms();
+    showNotification('Room deleted successfully!', 'success');
+}
+
+function joinRoom(roomId) {
+    if (!roomId) return;
+    
+    currentRoom = roomId;
+    
+    // Close previous WebSocket connection if any
+    if (ws) {
+        ws.close();
+        ws = null;
+    }
+    
+    // Try to connect to WebSocket server (fallback to local storage)
+    try {
+        ws = new WebSocket('ws://localhost:3001');
+        
+        ws.onopen = () => {
+            console.log('[WebSocket] Connection opened for room:', roomId);
+            ws.send(JSON.stringify({ 
+                type: 'join', 
+                room: roomId,
+                username: currentUsername 
+            }));
+        };
+        
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'message') {
+                displayIncomingMessage(msg);
+            }
+        };
+        
+        ws.onerror = () => {
+            console.log('WebSocket not available, using localStorage fallback');
+            ws = null;
+        };
+        
+        ws.onclose = () => {
+            console.log('WebSocket connection closed');
+            ws = null;
+        };
+    } catch (error) {
+        console.log('WebSocket not available, using localStorage fallback');
+        ws = null;
+    }
+    
+    const rooms = getStoredData('chatRooms') || [];
+    const room = rooms.find(r => r.id === roomId);
+    
+    if (!room) return;
+    
+    // Update UI
+    const currentRoomElement = document.getElementById('current-room');
+    const roomMembersElement = document.getElementById('room-members');
+    
+    if (currentRoomElement) {
+        currentRoomElement.textContent = room.name;
+    }
+    
+    if (roomMembersElement) {
+        roomMembersElement.textContent = `${room.members} members`;
+    }
+    
+    // Update room selection in UI
+    document.querySelectorAll('.room-list li').forEach(li => {
+        li.classList.remove('active');
+    });
+    
+    const activeRoom = document.querySelector(`[data-room-id="${roomId}"]`);
+    if (activeRoom) {
+        activeRoom.classList.add('active');
+    }
+    
+    // Load messages for this room
+    displayMessages();
+    
+    // Focus on message input
+    const messageInput = document.getElementById('message-input');
+    if (messageInput) {
+        messageInput.focus();
+    }
+}
+
 function generateRoomId(roomName) {
-    return roomName.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    return roomName.toLowerCase()
+        .replace(/[^a-z0-9]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '');
 }
 
 // ========================================
@@ -722,30 +743,29 @@ function handleMessageInput(e) {
 }
 
 function sendMessage() {
-    console.log('[sendMessage] Sending message, currentRoom:', currentRoom, 'currentUsername:', currentUsername);
-    console.log('[sendMessage] ws:', ws, 'readyState:', ws ? ws.readyState : 'no ws');
     const messageInput = document.getElementById('message-input');
     if (!messageInput || !currentRoom) return;
+    
     const messageText = messageInput.value.trim();
     if (!messageText) return;
-
+    
     const message = {
+        id: generateMessageId(),
         type: 'message',
         room: currentRoom,
         author: currentUsername,
         content: messageText,
         timestamp: new Date().toISOString()
     };
-
+    
     // Send via WebSocket if connected
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(message));
     } else {
-        console.log('[sendMessage] WebSocket not open, using fallback');
         // Fallback: store locally
         displayIncomingMessage(message);
     }
-
+    
     // Clear input
     messageInput.value = '';
     updateCharacterCount();
@@ -753,103 +773,100 @@ function sendMessage() {
     stopTyping();
 }
 
-
-
 function displayMessages() {
-    console.log('[displayMessages] Displaying messages for room:', currentRoom);
     if (!currentRoom) return;
+    
     const messagesContainer = document.getElementById('messages');
-    console.log('[displayMessages] messagesContainer:', messagesContainer);
-    if (!messagesContainer) {
-        alert('No messages container found!');
-        return;
-    }
+    if (!messagesContainer) return;
+    
     const allMessages = getStoredData('chatMessages') || {};
-    console.log('[displayMessages] allMessages:', allMessages);
-    console.log('[displayMessages] currentRoom:', currentRoom);
-    console.log('[displayMessages] chatMessages keys:', Object.keys(allMessages));
     const roomMessages = allMessages[currentRoom] || [];
-    console.log('[displayMessages] roomMessages:', roomMessages);
+    
     // Clear existing messages
     messagesContainer.innerHTML = '';
+    
     if (roomMessages.length === 0) {
         messagesContainer.innerHTML = `
-            <div class="no-messages">
+            <div class="welcome-message">
                 <i class="fas fa-comments"></i>
-                <h3>No messages yet</h3>
-                <p>Be the first to start the conversation!</p>
+                <h3>Welcome to the chat!</h3>
+                <p>Start a conversation by sending your first message.</p>
             </div>
         `;
-
         return;
     }
-    let renderedCount = 0;
+    
     roomMessages.forEach(message => {
-        console.log('[displayMessages] Rendering message:', message);
         const messageElement = createMessageElement(message);
-        console.log('[displayMessages] Created element:', messageElement);
         messagesContainer.appendChild(messageElement);
-        renderedCount++;
     });
-
-
+    
     scrollToBottom();
 }
 
-// Real-time: add incoming message to localStorage and UI
 function displayIncomingMessage(msg) {
-    console.log('[displayIncomingMessage] Incoming message:', msg, 'currentRoom:', currentRoom, 'currentUsername:', currentUsername);
-    let allMessages = getStoredData('chatMessages');
-    if (!allMessages || typeof allMessages !== 'object' || Array.isArray(allMessages)) {
-        allMessages = {};
+    let allMessages = getStoredData('chatMessages') || {};
+    
+    if (!allMessages[msg.room]) {
+        allMessages[msg.room] = [];
     }
-    if (!allMessages[msg.room]) allMessages[msg.room] = [];
+    
     allMessages[msg.room].push(msg);
     storeData('chatMessages', allMessages);
-    if (currentRoom === msg.room) displayMessages();
+    
+    if (currentRoom === msg.room) {
+        displayMessages();
+        
+        // Show notification if not from current user
+        if (msg.author !== currentUsername && notificationsEnabled) {
+            showDesktopNotification(msg.author, msg.content);
+        }
+    } else {
+        // Update room with unread indicator
+        updateUnreadIndicator(msg.room);
+    }
 }
 
-
-
 function createMessageElement(message) {
-    console.log('[createMessageElement] Input message:', message);
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${message.author === currentUsername ? 'own' : ''}`;
     messageDiv.setAttribute('data-message-id', message.id);
     
-    // Enhanced: Show sender and user-friendly timestamp clearly
     const formattedContent = formatMessageContent(message.content);
     const timeString = formatMessageTime(message.timestamp);
+    const authorInitial = message.author.charAt(0).toUpperCase();
     
     messageDiv.innerHTML = `
         <div class="message-header">
-            <span class="message-author">${escapeHtml(message.author)}</span>
-            <span class="message-time" title="${new Date(message.timestamp).toLocaleString()}">${timeString}</span>
+            <div class="message-info">
+                <div class="message-avatar">${authorInitial}</div>
+                <span class="message-author">${escapeHtml(message.author)}</span>
+            </div>
+            <span class="message-time">${timeString}</span>
         </div>
         <div class="message-content">${formattedContent}</div>
     `;
-    console.log('[createMessageElement] Output element:', messageDiv);
+    
     return messageDiv;
 }
 
-// Enhanced: Harden message rendering security and sanitize links
 function formatMessageContent(content) {
     // Escape HTML first
     let formatted = escapeHtml(content);
-
+    
     // Apply basic formatting (bold, italic, code)
     formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold
     formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>'); // Italic
     formatted = formatted.replace(/`(.*?)`/g, '<code>$1</code>'); // Code
-
-    // Format links with strict URL validation and rel attributes
+    
+    // Format links with strict URL validation
     formatted = formatted.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (match, text, url) => {
         if (/^(https?:\/\/|mailto:)/.test(url)) {
             return `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`;
         }
-        return escapeHtml(match); // If not a safe URL, escape
+        return escapeHtml(match);
     });
-
+    
     // Auto-link URLs (http/https only)
     const urlRegex = /((https?:\/\/)[^\s]+)/g;
     formatted = formatted.replace(urlRegex, (url) => {
@@ -858,10 +875,9 @@ function formatMessageContent(content) {
         }
         return escapeHtml(url);
     });
-
+    
     return formatted;
 }
-
 
 function generateMessageId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
@@ -871,16 +887,6 @@ function scrollToBottom() {
     const messagesContainer = document.getElementById('messages');
     if (messagesContainer) {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-}
-
-function clearWelcomeMessage() {
-    const messagesContainer = document.getElementById('messages');
-    if (messagesContainer) {
-        const welcomeMessage = messagesContainer.querySelector('.welcome-message');
-        if (welcomeMessage) {
-            welcomeMessage.remove();
-        }
     }
 }
 
@@ -915,12 +921,12 @@ function handleTypingIndicator() {
 
 function startTyping() {
     isTyping = true;
-    // In real implementation, this would send to server
-    // For now, we'll simulate by storing in localStorage
     const typingData = getStoredData('typingUsers') || {};
+    
     if (!typingData[currentRoom]) {
         typingData[currentRoom] = [];
     }
+    
     if (!typingData[currentRoom].includes(currentUsername)) {
         typingData[currentRoom].push(currentUsername);
         storeData('typingUsers', typingData);
@@ -930,6 +936,7 @@ function startTyping() {
 function stopTyping() {
     isTyping = false;
     const typingData = getStoredData('typingUsers') || {};
+    
     if (typingData[currentRoom]) {
         typingData[currentRoom] = typingData[currentRoom].filter(user => user !== currentUsername);
         storeData('typingUsers', typingData);
@@ -945,12 +952,15 @@ function updateTypingIndicator() {
     const typingData = getStoredData('typingUsers') || {};
     const roomTypingUsers = typingData[currentRoom] || [];
     
-    // Filter out current user and get other users typing
+    // Filter out current user
     const otherUsersTyping = roomTypingUsers.filter(user => user !== currentUsername);
     
     if (otherUsersTyping.length > 0) {
         const typingText = formatTypingText(otherUsersTyping);
-        typingIndicator.querySelector('.typing-text').textContent = typingText;
+        const typingTextElement = typingIndicator.querySelector('.typing-text');
+        if (typingTextElement) {
+            typingTextElement.textContent = typingText;
+        }
         typingIndicator.style.display = 'flex';
     } else {
         typingIndicator.style.display = 'none';
@@ -972,6 +982,7 @@ function formatTypingText(users) {
 // ========================================
 function addUserToOnlineList(username) {
     const onlineUsers = getStoredData('onlineUsers') || [];
+    
     if (!onlineUsers.find(user => user.username === username)) {
         onlineUsers.push({
             username: username,
@@ -988,7 +999,6 @@ function removeUserFromOnlineList(username) {
     storeData('onlineUsers', filteredUsers);
 }
 
-// Enhanced: Real-time user presence display
 function loadOnlineUsers() {
     const onlineUsers = getStoredData('onlineUsers') || [];
     const onlineUsersList = document.getElementById('online-users');
@@ -1004,45 +1014,23 @@ function loadOnlineUsers() {
     
     onlineUsers.forEach(user => {
         const li = document.createElement('li');
+        const initial = user.username.charAt(0).toUpperCase();
+        
         li.innerHTML = `
-            <div class="user-avatar ${user.online ? 'online' : ''}">
-                ${user.username.charAt(0).toUpperCase()}
-            </div>
+            <div class="user-avatar">${initial}</div>
             <span class="user-name">${escapeHtml(user.username)}</span>
-            <span class="user-status ${user.online ? 'online' : 'offline'}">
-                <i class="fas fa-circle"></i> ${user.online ? 'Online' : 'Offline'}
-            </span>
+            <div class="user-status online">
+                <i class="fas fa-circle"></i>
+                Online
+            </div>
         `;
+        
         onlineUsersList.appendChild(li);
     });
 }
 
-
 function updateOnlineUsers() {
     loadOnlineUsers();
-}
-
-function handleUserLeaving() {
-    removeUserFromOnlineList(currentUsername);
-    stopTyping();
-}
-
-function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        // Remove user from online list
-        removeUserFromOnlineList(currentUsername);
-        
-        // Clear user session
-        removeStoredData('chatUsername');
-        
-        // Clear intervals
-        if (messagePollingInterval) {
-            clearInterval(messagePollingInterval);
-        }
-        
-        // Redirect to login
-        window.location.href = 'index.html';
-    }
 }
 
 // ========================================
@@ -1054,28 +1042,12 @@ function populateEmojiPicker() {
     
     emojiGrid.innerHTML = '';
     
-    Object.entries(emojiCategories).forEach(([category, emojis]) => {
-        const categoryDiv = document.createElement('div');
-        categoryDiv.className = 'emoji-category';
-        
-        const categoryTitle = document.createElement('h5');
-        categoryTitle.textContent = category;
-        categoryTitle.className = 'emoji-category-title';
-        categoryDiv.appendChild(categoryTitle);
-        
-        const emojiRow = document.createElement('div');
-        emojiRow.className = 'emoji-row';
-        
-        emojis.forEach(emoji => {
-            const emojiBtn = document.createElement('button');
-            emojiBtn.textContent = emoji;
-            emojiBtn.className = 'emoji-item';
-            emojiBtn.addEventListener('click', () => insertEmoji(emoji));
-            emojiRow.appendChild(emojiBtn);
-        });
-        
-        categoryDiv.appendChild(emojiRow);
-        emojiGrid.appendChild(categoryDiv);
+    // Add all emojis from categories
+    Object.values(emojiCategories).flat().forEach(emoji => {
+        const span = document.createElement('span');
+        span.textContent = emoji;
+        span.onclick = () => insertEmoji(emoji);
+        emojiGrid.appendChild(span);
     });
 }
 
@@ -1090,106 +1062,101 @@ function toggleEmojiPicker() {
     }
 }
 
+function hideEmojiPicker() {
+    const emojiPicker = document.getElementById('emoji-picker');
+    if (emojiPicker) {
+        emojiPicker.style.display = 'none';
+    }
+}
+
 function insertEmoji(emoji) {
     const messageInput = document.getElementById('message-input');
-    if (!messageInput) return;
-    
-    const cursorPos = messageInput.selectionStart;
-    const textBefore = messageInput.value.substring(0, cursorPos);
-    const textAfter = messageInput.value.substring(messageInput.selectionEnd);
-    
-    messageInput.value = textBefore + emoji + textAfter;
-    messageInput.focus();
-    messageInput.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
-    
-    updateCharacterCount();
-    autoResizeTextarea();
+    if (messageInput) {
+        const cursorPos = messageInput.selectionStart;
+        const textBefore = messageInput.value.substring(0, cursorPos);
+        const textAfter = messageInput.value.substring(messageInput.selectionEnd);
+        
+        messageInput.value = textBefore + emoji + textAfter;
+        messageInput.selectionStart = messageInput.selectionEnd = cursorPos + emoji.length;
+        
+        messageInput.focus();
+        updateCharacterCount();
+    }
 }
 
 // ========================================
 // FORMATTING FUNCTIONS
 // ========================================
-function insertFormat(startTag, endTag) {
+function insertFormatting(startTag, endTag) {
     const messageInput = document.getElementById('message-input');
     if (!messageInput) return;
     
     const start = messageInput.selectionStart;
     const end = messageInput.selectionEnd;
     const selectedText = messageInput.value.substring(start, end);
+    const beforeText = messageInput.value.substring(0, start);
+    const afterText = messageInput.value.substring(end);
     
-    const replacement = startTag + selectedText + endTag;
-    const textBefore = messageInput.value.substring(0, start);
-    const textAfter = messageInput.value.substring(end);
-    
-    messageInput.value = textBefore + replacement + textAfter;
-    messageInput.focus();
+    const newText = beforeText + startTag + selectedText + endTag + afterText;
+    messageInput.value = newText;
     
     // Set cursor position
     const newPos = start + startTag.length + selectedText.length + endTag.length;
-    messageInput.setSelectionRange(newPos, newPos);
+    messageInput.selectionStart = messageInput.selectionEnd = newPos;
+    messageInput.focus();
     
     updateCharacterCount();
 }
 
-// ========================================
-// UI HELPER FUNCTIONS
-// ========================================
 function updateCharacterCount() {
     const messageInput = document.getElementById('message-input');
-    const charCount = document.getElementById('char-count');
+    const characterCount = document.getElementById('character-count');
     
-    if (messageInput && charCount) {
-        charCount.textContent = messageInput.value.length;
+    if (messageInput && characterCount) {
+        const length = messageInput.value.length;
+        const maxLength = 1000;
         
-        // Change color based on character count
-        if (messageInput.value.length > 800) {
-            charCount.style.color = 'var(--warning-color)';
-        } else if (messageInput.value.length > 950) {
-            charCount.style.color = 'var(--error-color)';
+        characterCount.textContent = `${length}/${maxLength}`;
+        
+        if (length > maxLength * 0.9) {
+            characterCount.classList.add('warning');
         } else {
-            charCount.style.color = 'var(--text-muted)';
+            characterCount.classList.remove('warning');
+        }
+        
+        if (length > maxLength) {
+            characterCount.classList.add('error');
+            messageInput.value = messageInput.value.substring(0, maxLength);
+        } else {
+            characterCount.classList.remove('error');
         }
     }
 }
 
 function autoResizeTextarea() {
     const messageInput = document.getElementById('message-input');
-    if (!messageInput) return;
-    
-    messageInput.style.height = 'auto';
-    messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + 'px';
-}
-
-function toggleMobileMenu() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('mobile-overlay');
-    if (sidebar) {
-        sidebar.classList.toggle('mobile-open');
-        if (sidebar.classList.contains('mobile-open')) {
-            if (overlay) overlay.style.display = 'block';
-            sidebar.setAttribute('aria-modal', 'true');
-            sidebar.focus();
-        } else {
-            if (overlay) overlay.style.display = 'none';
-            sidebar.removeAttribute('aria-modal');
-        }
+    if (messageInput) {
+        messageInput.style.height = 'auto';
+        messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + 'px';
     }
 }
 
 // ========================================
-// NOTIFICATION SYSTEM
+// NOTIFICATIONS
 // ========================================
 function requestNotificationPermission() {
     if ('Notification' in window && Notification.permission === 'default') {
-        setTimeout(() => {
-            const notificationRequest = document.getElementById('notification-request');
-            if (notificationRequest) {
-                notificationRequest.style.display = 'block';
-            }
-        }, 3000);
+        showNotificationPermissionRequest();
     } else if (Notification.permission === 'granted') {
         notificationsEnabled = true;
         updateNotificationButton();
+    }
+}
+
+function showNotificationPermissionRequest() {
+    const notificationRequest = document.getElementById('notification-request');
+    if (notificationRequest) {
+        notificationRequest.style.display = 'block';
     }
 }
 
@@ -1199,16 +1166,18 @@ function enableNotifications() {
             if (permission === 'granted') {
                 notificationsEnabled = true;
                 updateNotificationButton();
+                hideNotificationPermissionRequest();
                 showNotification('Notifications enabled!', 'success');
             }
-            dismissNotificationRequest();
         });
     }
 }
 
-// Properly defined at top-level
 function dismissNotificationRequest() {
-    // Placeholder: Dismiss notification request UI
+    hideNotificationPermissionRequest();
+}
+
+function hideNotificationPermissionRequest() {
     const notificationRequest = document.getElementById('notification-request');
     if (notificationRequest) {
         notificationRequest.style.display = 'none';
@@ -1216,526 +1185,166 @@ function dismissNotificationRequest() {
 }
 
 function toggleNotifications() {
-    notificationsEnabled = !notificationsEnabled;
-    updateNotificationButton();
-    
-    if (notificationsEnabled) {
-        showNotification('Notifications enabled', 'success');
+    if (Notification.permission === 'granted') {
+        notificationsEnabled = !notificationsEnabled;
+        updateNotificationButton();
+        showNotification(
+            notificationsEnabled ? 'Notifications enabled' : 'Notifications disabled',
+            'info'
+        );
     } else {
-        showNotification('Notifications disabled', 'info');
+        enableNotifications();
     }
 }
 
 function updateNotificationButton() {
-    const notificationBtn = document.getElementById('notification-btn');
+    const notificationBtn = document.getElementById('notification-toggle-btn');
     if (notificationBtn) {
         const icon = notificationBtn.querySelector('i');
         if (icon) {
             icon.className = notificationsEnabled ? 'fas fa-bell' : 'fas fa-bell-slash';
         }
+        notificationBtn.title = notificationsEnabled ? 'Disable notifications' : 'Enable notifications';
     }
 }
 
-function scheduleNotification(message) {
-    // Simulate notification for other users
-    if (Math.random() > 0.7) { // 30% chance to show notification
-        setTimeout(() => {
-            showBrowserNotification(`New message from ${message.author}`, message.content);
-        }, 1000);
-    }
-}
-
-function showBrowserNotification(title, body) {
-    if (notificationsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-        new Notification(title, {
-            body: body.substring(0, 100),
-            icon: '/favicon.ico', // Add your icon path
-            tag: 'chat-message'
-        });
-    }
+function showDesktopNotification(author, message) {
+    if (!notificationsEnabled || Notification.permission !== 'granted') return;
+    
+    const notification = new Notification(`${author} says:`, {
+        body: message,
+        icon: '/favicon.ico'
+    });
+    
+    setTimeout(() => notification.close(), 5000);
 }
 
 function showNotification(message, type = 'info') {
-    // Create notification element
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <div class="notification-content">
-            <i class="fas fa-${getNotificationIcon(type)}"></i>
-            <span>${escapeHtml(message)}</span>
-        </div>
-        <button class="notification-close" onclick="this.parentElement.remove()">
-            <i class="fas fa-times"></i>
-        </button>
+    notification.textContent = message;
+    
+    notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 10000;
+        background: var(--bg-secondary); color: var(--text-primary);
+        padding: 12px 20px; border-radius: 8px; border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-lg); backdrop-filter: blur(10px);
+        animation: slideInRight 0.3s ease-out;
     `;
     
-    // Add to body
     document.body.appendChild(notification);
     
-    // Animate in
-    setTimeout(() => notification.classList.add('show'), 100);
-    
-    // Auto remove after 5 seconds
     setTimeout(() => {
-        if (notification && notification.parentElement) {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                if (notification && notification.parentElement) {
-                    notification.remove();
-                }
-            }, 300);
-        }
-    }, 5000);
+        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// ========================================
+// MOBILE & UI FUNCTIONS
+// ========================================
+function toggleMobileMenu() {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('open');
+    }
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('open');
+    }
+}
+
+function closeAllModals() {
+    // Close emoji picker
+    hideEmojiPicker();
+    
+    // Close modals
+    const modals = document.querySelectorAll('.modal-overlay');
+    modals.forEach(modal => {
+        modal.style.display = 'none';
+    });
 }
 
 // ========================================
 // UTILITY FUNCTIONS
 // ========================================
+function getStoredData(key) {
+    try {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : null;
+    } catch (error) {
+        console.error('Error reading from localStorage:', error);
+        return null;
+    }
+}
 
-function getNotificationIcon(type) {
-    const icons = {
-        'success': 'check-circle',
-        'error': 'exclamation-circle',
-        'warning': 'exclamation-triangle',
-        'info': 'info-circle'
-    };
-    return icons[type] || 'info-circle';
+function storeData(key, data) {
+    try {
+        localStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+        console.error('Error writing to localStorage:', error);
+    }
 }
 
 function escapeHtml(text) {
-    if (typeof text !== 'string') return text;
-    
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-function formatTimeAgo(timestamp) {
+function formatDate(dateString) {
+    const date = new Date(dateString);
     const now = new Date();
-    const time = new Date(timestamp);
-    const diffInSeconds = Math.floor((now - time) / 1000);
+    const diff = now - date;
     
-    if (diffInSeconds < 60) {
-        return 'just now';
-    } else if (diffInSeconds < 3600) {
-        const minutes = Math.floor(diffInSeconds / 60);
-        return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-    } else if (diffInSeconds < 86400) {
-        const hours = Math.floor(diffInSeconds / 3600);
-        return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    } else if (diffInSeconds < 2592000) {
-        const days = Math.floor(diffInSeconds / 86400);
-        return `${days} day${days > 1 ? 's' : ''} ago`;
+    if (diff < 24 * 60 * 60 * 1000) { // Less than 24 hours
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } else {
-        return time.toLocaleDateString();
+        return date.toLocaleDateString();
     }
 }
 
-// Enhanced: User-friendly timestamp formatting
 function formatMessageTime(timestamp) {
     const date = new Date(timestamp);
     const now = new Date();
-    if (date.toDateString() === now.toDateString()) {
-        // Today: show only time
+    const diffInHours = (now - date) / (1000 * 60 * 60);
+    
+    if (diffInHours < 24) {
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     } else {
-        // Other days: show date and time
-        return date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (date.toDateString() === yesterday.toDateString()) {
-        return `Yesterday ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    
-    // If it's within the last week
-    if ((now - date) < 7 * 24 * 60 * 60 * 1000) {
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        return `${days[date.getDay()]} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    
-    // Older messages
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-// ========================================
-// STORAGE HELPER FUNCTIONS
-// ========================================
-
-function storeData(key, data) {
-    try {
-        const serializedData = JSON.stringify(data);
-        localStorage.setItem(key, serializedData);
-        return true;
-    } catch (error) {
-        console.error('Error storing data:', error);
-        showNotification('Failed to save data', 'error');
-        return false;
-    }
-}
-
-function getStoredData(key) {
-    try {
-        const item = localStorage.getItem(key);
-        return item ? JSON.parse(item) : null;
-    } catch (error) {
-        console.error('Error retrieving data:', error);
-        return null;
-    }
-}
-
-function removeStoredData(key) {
-    try {
-        localStorage.removeItem(key);
-        return true;
-    } catch (error) {
-        console.error('Error removing data:', error);
-        return false;
-    }
-}
-
-// ========================================
-// ENHANCED MOBILE MENU FUNCTIONALITY
-// ========================================
-
-function toggleMobileMenu() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('mobile-overlay');
-    if (sidebar) {
-        sidebar.classList.toggle('mobile-open');
-        if (sidebar.classList.contains('mobile-open')) {
-            if (overlay) overlay.style.display = 'block';
-            sidebar.setAttribute('aria-modal', 'true');
-            sidebar.focus();
-        } else {
-            if (overlay) overlay.style.display = 'none';
-            sidebar.removeAttribute('aria-modal');
-        }
-    }
-}
-
-// Overlay click closes sidebar on mobile
-const mobileOverlay = document.getElementById('mobile-overlay');
-if (mobileOverlay) {
-    mobileOverlay.addEventListener('click', () => {
-        const sidebar = document.getElementById('sidebar');
-        if (sidebar && sidebar.classList.contains('mobile-open')) {
-            toggleMobileMenu();
-        }
-    });
-}
-
-function createMobileOverlay() {
-    const overlay = document.createElement('div');
-    overlay.className = 'mobile-overlay';
-    overlay.addEventListener('click', toggleMobileMenu);
-    document.body.appendChild(overlay);
-}
-
-// ========================================
-// ENHANCED MODAL MANAGEMENT
-// ========================================
-
-// Add keyboard support for modals
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        // Close emoji picker
-        const emojiPicker = document.getElementById('emoji-picker');
-        if (emojiPicker && emojiPicker.style.display !== 'none') {
-            emojiPicker.style.display = 'none';
-            return;
-        }
-        
-        // Close create room modal
-        const createRoomModal = document.getElementById('create-room-modal');
-        if (createRoomModal && createRoomModal.style.display !== 'none') {
-            hideCreateRoomModal();
-            return;
-        }
-        
-        // Close mobile menu
-        const sidebar = document.getElementById('sidebar');
-        if (sidebar && sidebar.classList.contains('mobile-open')) {
-            toggleMobileMenu();
-            return;
-        }
-    }
-});
-
-// Enhanced create room modal with Enter key support
-function enhanceCreateRoomModal() {
-    const roomNameInput = document.getElementById('room-name');
-    const roomDescInput = document.getElementById('room-description');
-    
-    if (roomNameInput) {
-        roomNameInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                createRoom();
-            }
-        });
-    }
-    
-    if (roomDescInput) {
-        roomDescInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && e.ctrlKey) {
-                e.preventDefault();
-                createRoom();
-            }
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit' 
         });
     }
 }
 
-// ========================================
-// CONNECTION STATUS MANAGEMENT
-// ========================================
+function updateUnreadIndicator(roomId) {
+    const roomElement = document.querySelector(`[data-room-id="${roomId}"]`);
+    if (roomElement && roomId !== currentRoom) {
+        roomElement.classList.add('unread');
+    }
+}
 
-function updateConnectionStatus(status) {
-    connectionStatus = status;
-    const statusIndicator = document.querySelector('.user-status');
-    
-    if (statusIndicator) {
-        statusIndicator.className = `user-status ${status}`;
-        const statusText = statusIndicator.querySelector('span') || statusIndicator;
-        const icon = statusIndicator.querySelector('i');
+function logout() {
+    if (confirm('Are you sure you want to logout?')) {
+        // Remove user from online users
+        removeUserFromOnlineList(currentUsername);
         
-        switch (status) {
-            case 'online':
-                if (icon) icon.className = 'fas fa-circle';
-                statusText.textContent = 'Online';
-                break;
-            case 'offline':
-                if (icon) icon.className = 'fas fa-circle';
-                statusText.textContent = 'Offline';
-                break;
-            case 'away':
-                if (icon) icon.className = 'fas fa-clock';
-                statusText.textContent = 'Away';
-                break;
-            case 'busy':
-                if (icon) icon.className = 'fas fa-do-not-disturb';
-                statusText.textContent = 'Busy';
-                break;
-        }
-    }
-}
-
-function simulateConnectionStatus() {
-    // Simulate occasional connection issues
-    setInterval(() => {
-        if (Math.random() < 0.05) { // 5% chance every interval
-            updateConnectionStatus('offline');
-            showNotification('Connection lost. Reconnecting...', 'warning');
-            
-            // Simulate reconnection after 2-5 seconds
-            setTimeout(() => {
-                updateConnectionStatus('online');
-                showNotification('Connected!', 'success');
-            }, Math.random() * 3000 + 2000);
-        }
-    }, 30000); // Check every 30 seconds
-}
-
-// ========================================
-// ENHANCED ERROR HANDLING
-// ========================================
-
-function handleError(error, context = '') {
-    console.error(`Error in ${context}:`, error);
-    
-    let userMessage = 'An unexpected error occurred';
-    
-    if (error.name === 'QuotaExceededError') {
-        userMessage = 'Storage quota exceeded. Please clear some data.';
-    } else if (error.message.includes('localStorage')) {
-        userMessage = 'Unable to save data. Please check your browser settings.';
-    } else if (context.includes('network')) {
-        userMessage = 'Network error. Please check your connection.';
-    }
-    
-    showNotification(userMessage, 'error');
-}
-
-// Wrap critical functions with error handling
-function safeExecute(fn, context = '') {
-    return function(...args) {
-        try {
-            return fn.apply(this, args);
-        } catch (error) {
-            handleError(error, context);
-            return null;
-        }
-    };
-}
-
-// ========================================
-// MESSAGE ENHANCEMENTS
-// ========================================
-
-function deleteMessage(messageId) {
-    if (!currentRoom || !messageId) return;
-    
-    if (confirm('Are you sure you want to delete this message?')) {
-        const allMessages = getStoredData('chatMessages') || {};
-        if (allMessages[currentRoom]) {
-            allMessages[currentRoom] = allMessages[currentRoom].filter(msg => msg.id !== messageId);
-            storeData('chatMessages', allMessages);
-            displayMessages();
-            showNotification('Message deleted', 'info');
-        }
-    }
-}
-
-function editMessage(messageId) {
-    if (!currentRoom || !messageId) return;
-    
-    const allMessages = getStoredData('chatMessages') || {};
-    const roomMessages = allMessages[currentRoom] || [];
-    const message = roomMessages.find(msg => msg.id === messageId);
-    
-    if (!message || message.author !== currentUsername) {
-        showNotification('You can only edit your own messages', 'warning');
-        return;
-    }
-    
-    const newContent = prompt('Edit your message:', message.content);
-    if (newContent !== null && newContent.trim() !== '') {
-        message.content = newContent.trim();
-        message.edited = true;
-        message.editedAt = new Date().toISOString();
+        // Clear current user data
+        localStorage.removeItem('chatUsername');
+        localStorage.removeItem('loginTime');
         
-        storeData('chatMessages', allMessages);
-        displayMessages();
-        showNotification('Message updated', 'success');
-    }
-}
-
-// ========================================
-// ROOM MANAGEMENT ENHANCEMENTS
-// ========================================
-
-let pendingDeleteRoomId = null;
-function deleteRoom(roomId) {
-    if (!roomId) return;
-    const rooms = getStoredData('chatRooms') || [];
-    const room = rooms.find(r => r.id === roomId);
-    if (!room) return;
-    if (room.createdBy !== currentUsername) {
-        showNotification('You can only delete rooms you created', 'warning');
-        return;
-    }
-    // Show custom modal
-    pendingDeleteRoomId = roomId;
-    const modal = document.getElementById('delete-room-modal');
-    const msg = document.getElementById('delete-room-message');
-    if (modal && msg) {
-        msg.textContent = `Are you sure you want to delete the room "${room.name}"? This action cannot be undone.`;
-        modal.style.display = 'flex';
-    }
-}
-
-// Modal event listeners
-function setupDeleteRoomModalEvents() {
-    const modal = document.getElementById('delete-room-modal');
-    const closeBtn = document.getElementById('close-delete-room-modal');
-    const cancelBtn = document.getElementById('cancel-delete-room');
-    const confirmBtn = document.getElementById('confirm-delete-room');
-    [closeBtn, cancelBtn].forEach(btn => {
-        if (btn) btn.onclick = () => { if (modal) modal.style.display = 'none'; pendingDeleteRoomId = null; };
-    });
-    if (confirmBtn) confirmBtn.onclick = () => {
-        if (!pendingDeleteRoomId) return;
-        const rooms = getStoredData('chatRooms') || [];
-        const updatedRooms = rooms.filter(r => r.id !== pendingDeleteRoomId);
-        storeData('chatRooms', updatedRooms);
-        // Remove room messages
-        const allMessages = getStoredData('chatMessages') || {};
-        delete allMessages[pendingDeleteRoomId];
-        storeData('chatMessages', allMessages);
-        // If current room is deleted, clear selection
-        if (currentRoom === pendingDeleteRoomId) {
-            currentRoom = null;
-            document.getElementById('current-room').textContent = 'Select a room to start chatting';
-            document.getElementById('room-members').textContent = '0 members';
-            document.getElementById('messages').innerHTML = `
-                <div class="welcome-message">
-                    <i class="fas fa-comments"></i>
-                    <h3>Welcome to ChatApp!</h3>
-                    <p>Select a room from the sidebar to start chatting with others.</p>
-                </div>
-            `;
+        // Close WebSocket connection
+        if (ws) {
+            ws.close();
+            ws = null;
         }
-        if (modal) modal.style.display = 'none';
-        loadRooms();
-        showNotification('Room deleted successfully', 'success');
-        pendingDeleteRoomId = null;
-    };
-}
-
-// Call once on page load
-setupDeleteRoomModalEvents();
-
-// ========================================
-// INITIALIZATION ENHANCEMENTS
-// ========================================
-
-// Add this to your initialization
-function initializeEnhancements() {
-    enhanceCreateRoomModal();
-    simulateConnectionStatus();
-    
-    // Add double-click to edit messages
-    document.addEventListener('dblclick', function(e) {
-        const messageElement = e.target.closest('.message.own');
-        if (messageElement) {
-            const messageId = messageElement.getAttribute('data-message-id');
-            if (messageId) {
-                editMessage(messageId);
-            }
-        }
-    });
-    
-    // Add right-click context menu for messages
-    document.addEventListener('contextmenu', function(e) {
-        const messageElement = e.target.closest('.message.own');
-        if (messageElement) {
-            e.preventDefault();
-            const messageId = messageElement.getAttribute('data-message-id');
-            showMessageContextMenu(e, messageId);
-        }
-    });
-}
-
-function showMessageContextMenu(event, messageId) {
-    // Remove existing context menu
-    const existingMenu = document.querySelector('.context-menu');
-    if (existingMenu) {
-        existingMenu.remove();
+        
+        // Redirect to login
+        window.location.href = 'index.html';
     }
-    
-    const contextMenu = document.createElement('div');
-    contextMenu.className = 'context-menu';
-    contextMenu.innerHTML = `
-        <button onclick="editMessage('${messageId}')">
-            <i class="fas fa-edit"></i> Edit
-        </button>
-        <button onclick="deleteMessage('${messageId}')">
-            <i class="fas fa-trash"></i> Delete
-        </button>
-    `;
-    
-    contextMenu.style.position = 'fixed';
-    contextMenu.style.left = event.clientX + 'px';
-    contextMenu.style.top = event.clientY + 'px';
-    contextMenu.style.zIndex = '1000';
-    
-    document.body.appendChild(contextMenu);
-    
-    // Remove context menu when clicking elsewhere
-    setTimeout(() => {
-        document.addEventListener('click', function removeContextMenu() {
-            contextMenu.remove();
-            document.removeEventListener('click', removeContextMenu);
-        });
-    }, 100);
 }
