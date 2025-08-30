@@ -1348,3 +1348,188 @@ function logout() {
         window.location.href = 'index.html';
     }
 }
+
+// Prevent zoom on double tap
+document.addEventListener('touchstart', function(event) {
+    if (event.touches.length > 1) {
+        event.preventDefault();
+    }
+}, { passive: false });
+
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function(event) {
+    const now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+    }
+    lastTouchEnd = now;
+}, false);
+
+// Better form handling on mobile
+const usernameInput = document.getElementById('username');
+if (usernameInput) {
+    usernameInput.addEventListener('focus', function() {
+        // Scroll to input on focus (mobile keyboards)
+        setTimeout(() => {
+            this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+    });
+}
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `notification notification-${type}`;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: white;
+        z-index: 10000;
+        animation: slideInRight 0.3s ease-out;
+    `;
+    toast.innerHTML = `
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()" style="margin-left: 10px; background: none; border: none; color: white; cursor: pointer;">&times;</button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.remove();
+    }, 5000);
+}
+
+// Notification close functionality
+function closeNotification() {
+    const notification = document.getElementById('notification-request');
+    if (notification) {
+        notification.classList.add('closing');
+        setTimeout(() => {
+            notification.style.display = 'none';
+            notification.classList.remove('closing');
+        }, 300);
+    }
+}
+
+function enableNotifications() {
+    if ("Notification" in window) {
+        Notification.requestPermission().then(function (permission) {
+            if (permission === "granted") {
+                showToast("Notifications enabled successfully!", "success");
+            } else {
+                showToast("Notifications denied.", "error");
+            }
+        });
+    } else {
+        showToast("This browser doesn't support notifications.", "error");
+    }
+    closeNotification();
+}
+
+// Show notification after page loads
+window.addEventListener('load', function() {
+    setTimeout(() => {
+        const notification = document.getElementById('notification-request');
+        if (notification) {
+            notification.style.display = 'block';
+        }
+    }, 3000);
+});
+
+// Mobile detection and responsive fixes
+function isMobile() {
+    return /Mobi|Android|iPhone|iPad|iPod|BlackBerry|Windows Phone/i.test(navigator.userAgent);
+}
+
+// Apply mobile class and fixes
+if (isMobile()) {
+    document.body.classList.add('mobile');
+    
+    // Fix input focus on mobile
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                setTimeout(() => {
+                    this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            });
+        });
+    });
+}
+
+// Prevent zoom on double tap for mobile
+document.addEventListener('touchstart', function(event) {
+    if (event.touches.length > 1) {
+        event.preventDefault();
+    }
+}, { passive: false });
+
+let lastTouchEndMobile = 0;
+document.addEventListener('touchend', function(event) {
+    const now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+    }
+    lastTouchEnd = now;
+}, false);
+
+// Toast notification function
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `notification notification-${type}`;
+    toast.style.cssText = `position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; color: white; z-index: 10000; animation: slideInRight 0.3s ease-out; max-width: 300px; background: var(--bg-secondary); border: 1px solid var(--border-color); backdrop-filter: blur(10px);`;
+    
+    const colors = {
+        success: 'var(--success-color)',
+        error: 'var(--error-color)',
+        info: 'var(--accent-color)',
+        warning: 'var(--warning-color)'
+    };
+    
+    toast.style.borderLeftColor = colors[type] || colors.info;
+    toast.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()" style="margin-left: 10px; background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem;">&times;</button>`;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 5000);
+}
+
+// Handle sidebar toggle for mobile
+function toggleMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const chatContainer = document.querySelector('.chat-container');
+    
+    if (sidebar && isMobile()) {
+        sidebar.classList.toggle('open');
+        chatContainer.classList.toggle('sidebar-open');
+    }
+}
+
+// Add mobile menu toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileToggle = document.querySelector('.mobile-menu-toggle');
+    if (mobileToggle) {
+        mobileToggle.addEventListener('click', toggleMobileSidebar);
+    }
+    
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(event) {
+        if (isMobile()) {
+            const sidebar = document.querySelector('.sidebar');
+            const mobileToggle = document.querySelector('.mobile-menu-toggle');
+            
+            if (sidebar && sidebar.classList.contains('open') && 
+                !sidebar.contains(event.target) && 
+                !mobileToggle.contains(event.target)) {
+                toggleMobileSidebar();
+            }
+        }
+    });
+});

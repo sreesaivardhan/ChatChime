@@ -6,6 +6,7 @@
     <title>ChatApp - Chat</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 </head>
 <body class="chat-body">
     <!-- Mobile Menu Toggle -->
@@ -208,20 +209,22 @@
         </div>
     </div>
 
-    <!-- Notification Permission Request -->
+    <!-- Fixed Notification Request -->
     <div class="notification-request" id="notification-request" style="display: none;">
+        <button class="notification-close" onclick="closeNotification()">&times;</button>
         <div class="notification-content">
             <i class="fas fa-bell"></i>
             <div>
                 <h4>Enable Notifications</h4>
-                <p>Get notified when you receive new messages</p>
+                <p>Stay updated with new messages and activities</p>
             </div>
         </div>
         <div class="notification-actions">
-            <button id="enable-notifications">Enable</button>
-            <button id="dismiss-notifications">Not now</button>
+            <button onclick="enableNotifications()">Enable</button>
+            <button onclick="closeNotification()">Later</button>
         </div>
     </div>
+
 
     <script src="script.js"></script>
 </body>

@@ -1746,4 +1746,434 @@ textarea:focus-visible {
         font-size: var(--font-size-base);
     }
 }
+/* ========================================
+   MOBILE RESPONSIVENESS FIXES
+======================================== */
+
+/* Base responsive adjustments */
+@media (max-width: 768px) {
+    body {
+        font-size: 14px;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .login-body {
+        padding: var(--spacing-sm);
+        min-height: 100vh;
+    }
+    
+    .login-container {
+        width: 100%;
+        max-width: none;
+        padding: 0;
+    }
+    
+    .login-card {
+        margin: 0;
+        padding: var(--spacing-lg);
+        border-radius: var(--radius-md);
+        min-height: auto;
+    }
+    
+    .login-header {
+        margin-bottom: var(--spacing-xl);
+    }
+    
+    .login-header h1 {
+        font-size: var(--font-size-2xl);
+        line-height: 1.2;
+    }
+    
+    .login-header p {
+        font-size: var(--font-size-sm);
+        line-height: 1.4;
+    }
+    
+    .chat-icon {
+        font-size: 3rem;
+    }
+    
+    /* Input fixes for mobile */
+    .input-group input {
+        padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-lg) 3.5rem !important;
+        font-size: 16px; /* Prevents zoom on iOS */
+        min-height: 50px;
+    }
+    
+    .input-icon {
+        left: 1rem !important;
+        font-size: 1.2rem !important;
+    }
+    
+    .login-btn {
+        padding: var(--spacing-lg);
+        font-size: var(--font-size-lg);
+        min-height: 54px; /* Touch-friendly size */
+    }
+    
+    /* Features mobile layout */
+    .login-features {
+        flex-direction: column;
+        gap: var(--spacing-md);
+        margin: var(--spacing-xl) 0;
+    }
+    
+    .feature {
+        flex-direction: row;
+        text-align: left;
+        padding: var(--spacing-md);
+        align-items: center;
+        justify-content: flex-start;
+    }
+    
+    .feature i {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+        margin-bottom: 0;
+        margin-right: var(--spacing-md);
+        flex-shrink: 0;
+    }
+    
+    .feature span {
+        font-size: var(--font-size-base);
+        text-align: left;
+        flex: 1;
+    }
+    
+    .login-footer {
+        font-size: var(--font-size-xs);
+        line-height: 1.4;
+        margin-top: var(--spacing-lg);
+    }
+    
+    /* Notification mobile adjustments */
+    .notification-request {
+        top: var(--spacing-sm);
+        right: var(--spacing-sm);
+        left: var(--spacing-sm);
+        max-width: none;
+    }
+}
+
+/* Small mobile phones */
+@media (max-width: 480px) {
+    .login-card {
+        padding: var(--spacing-md);
+    }
+    
+    .login-header h1 {
+        font-size: var(--font-size-xl);
+    }
+    
+    .chat-icon {
+        font-size: 2.5rem;
+    }
+    
+    .input-group input {
+        padding-left: 3rem !important;
+        font-size: 16px;
+    }
+    
+    .input-icon {
+        left: 0.8rem !important;
+        font-size: 1rem !important;
+    }
+    
+    .feature {
+        padding: var(--spacing-sm);
+    }
+    
+    .feature i {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
+    
+    .feature span {
+        font-size: var(--font-size-sm);
+    }
+}
+
+/* Touch-friendly improvements */
+@media (hover: none) and (pointer: coarse) {
+    .login-btn,
+    .feature,
+    .notification-close-btn {
+        min-height: 44px; /* Apple's recommended touch target */
+    }
+    
+    .input-group input {
+        min-height: 50px;
+        padding: 1rem 1rem 1rem 3.5rem !important;
+    }
+    
+    /* Remove hover effects on touch devices */
+    .feature:hover,
+    .login-btn:hover {
+        transform: none;
+    }
+    
+    /* Add active/touch states instead */
+    .feature:active,
+    .login-btn:active {
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (max-height: 500px) and (orientation: landscape) {
+    .login-body {
+        padding: var(--spacing-xs);
+    }
+    
+    .login-card {
+        padding: var(--spacing-md);
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .login-header {
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .chat-icon {
+        font-size: 2rem;
+    }
+    
+    .login-features {
+        flex-direction: row;
+        gap: var(--spacing-sm);
+    }
+    
+    .feature {
+        flex-direction: column;
+        text-align: center;
+        padding: var(--spacing-sm);
+    }
+    
+    .feature i {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+        margin-right: 0;
+        margin-bottom: var(--spacing-xs);
+    }
+}
+/* ========================================
+   ENHANCED MOBILE RESPONSIVENESS
+======================================== */
+
+/* Mobile class for body */
+body.mobile {
+    font-size: 14px;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+    .chat-body {
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    .mobile-menu-toggle {
+        display: block !important;
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        z-index: 1001;
+        background: var(--bg-glass);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 0.5rem;
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        backdrop-filter: blur(10px);
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    .sidebar {
+        position: fixed;
+        left: -100%;
+        top: 0;
+        height: 100%;
+        z-index: 1000;
+        transition: left 0.3s ease;
+        width: 280px;
+    }
+    
+    .sidebar.open {
+        left: 0;
+    }
+    
+    .chat-area {
+        width: 100%;
+    }
+    
+    .chat-container.sidebar-open .chat-area {
+        margin-left: 0;
+    }
+    
+    /* Notification adjustments for mobile */
+    .notification-request {
+        top: 1rem;
+        right: 1rem;
+        left: 1rem;
+        max-width: none;
+    }
+    
+    .notification-close {
+        top: 12px;
+        right: 12px;
+    }
+    
+    /* Input improvements for mobile */
+    .input-container {
+        padding: 1rem;
+    }
+    
+    #message-input {
+        font-size: 16px; /* Prevents zoom on iOS */
+        min-height: 44px;
+    }
+    
+    .send-btn,
+    .emoji-btn {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+/* Small mobile phones */
+@media (max-width: 480px) {
+    .sidebar {
+        width: 100%;
+        left: -100%;
+    }
+    
+    .notification-request {
+        margin: 0.5rem;
+        top: 0.5rem;
+        right: 0.5rem;
+        left: 0.5rem;
+    }
+}
+
+/* Landscape orientation fixes */
+@media (max-height: 500px) and (orientation: landscape) {
+    .chat-container {
+        height: 100vh;
+    }
+    
+    .messages {
+        padding: 0.5rem;
+    }
+    
+    .input-container {
+        padding: 0.5rem;
+    }
+}
+
+/* ========================================
+   FIXED NOTIFICATION CLOSE BUTTON
+======================================== */
+
+.notification-request {
+    position: fixed;
+    top: var(--spacing-lg);
+    right: var(--spacing-lg);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    backdrop-filter: blur(20px);
+    z-index: 1000;
+    animation: slideInRight 0.3s ease-out;
+    max-width: 350px;
+    opacity: 1;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.notification-request.closing {
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+.notification-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.5rem;
+    padding: 4px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.notification-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-lg);
+    padding-right: var(--spacing-2xl);
+}
+
+.notification-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding: 0 var(--spacing-lg) var(--spacing-lg);
+}
+
+.notification-actions button {
+    flex: 1;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-normal);
+}
+
+.notification-actions button:first-child {
+    background: var(--primary-color);
+    color: var(--text-primary);
+}
+
+.notification-actions button:first-child:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.notification-actions button:last-child {
+    background: var(--bg-input);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.notification-actions button:last-child:hover {
+    background: var(--bg-glass);
+    color: var(--text-primary);
+}
+
 
