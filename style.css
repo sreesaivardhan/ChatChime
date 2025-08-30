@@ -2176,4 +2176,69 @@ body.mobile {
     color: var(--text-primary);
 }
 
+/* ========================================
+   MOBILE NOTIFICATION INTERACTION FIX
+======================================== */
+
+/* Force notification to be interactive */
+.notification-request {
+    z-index: 99999 !important;
+    pointer-events: auto !important;
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    left: 1rem;
+    max-width: none;
+}
+
+/* Enable pointer events on ALL notification elements */
+.notification-request *,
+.notification-close,
+.notification-actions,
+.notification-actions button,
+.notification-content {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* Disable overlays that block interaction */
+.loading-overlay,
+.modal-overlay {
+    pointer-events: none !important;
+}
+
+/* Make buttons touch-friendly on mobile */
+@media (max-width: 768px) {
+    .notification-actions button {
+        min-height: 44px !important;
+        min-width: 44px !important;
+        padding: 1rem !important;
+        font-size: 1rem !important;
+        border: 2px solid transparent !important;
+        border-radius: var(--radius-lg) !important;
+        margin: 0.5rem 0 !important;
+    }
+    
+    .notification-close {
+        min-height: 44px !important;
+        min-width: 44px !important;
+        font-size: 1.8rem !important;
+        top: 8px;
+        right: 8px;
+    }
+}
+
+/* Prevent event blocking on touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .notification-request {
+        touch-action: manipulation !important;
+    }
+    
+    .notification-actions button:active {
+        transform: scale(0.95);
+        transition: transform 0.1s ease;
+    }
+}
+
+
 

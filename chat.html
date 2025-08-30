@@ -209,22 +209,21 @@
         </div>
     </div>
 
-    <!-- Fixed Notification Request -->
+    <!-- Notification Request -->
     <div class="notification-request" id="notification-request" style="display: none;">
-        <button class="notification-close" onclick="closeNotification()">&times;</button>
+        <button class="notification-close" onclick="closeNotification()" type="button">&times;</button>
         <div class="notification-content">
-            <i class="fas fa-bell"></i>
+            <i class="fas fa-bell" style="color: var(--primary-color); font-size: 1.5rem;"></i>
             <div>
-                <h4>Enable Notifications</h4>
-                <p>Stay updated with new messages and activities</p>
+                <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">Enable Notifications</h4>
+                <p style="color: var(--text-secondary); margin: 0;">Stay updated with new messages</p>
             </div>
         </div>
         <div class="notification-actions">
-            <button onclick="enableNotifications()">Enable</button>
-            <button onclick="closeNotification()">Later</button>
+            <button type="button" onclick="enableNotifications()">Enable</button>
+            <button type="button" onclick="closeNotification()">Later</button>
         </div>
     </div>
-
 
     <script src="script.js"></script>
 </body>

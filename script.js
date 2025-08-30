@@ -1533,3 +1533,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+// Enhanced notification event handling for mobile
+document.addEventListener('DOMContentLoaded', function() {
+    const notification = document.getElementById('notification-request');
+    
+    if (notification) {
+        // Prevent event bubbling that might block clicks
+        notification.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        
+        notification.addEventListener('touchstart', function(e) {
+            e.stopPropagation();
+        });
+        
+        // Force enable pointer events on notification
+        notification.style.pointerEvents = 'auto';
+        
+        // Ensure all child elements are clickable
+        const clickableElements = notification.querySelectorAll('button, .notification-close, .notification-actions button');
+        clickableElements.forEach(element => {
+            element.style.pointerEvents = 'auto';
+            element.style.cursor = 'pointer';
+        });
+    }
+});
+
+// Enhanced close function with better mobile support
+function closeNotification() {
+    const notification = document.getElementById('notification-request');
+    if (notification) {
+        console.log('Closing notification...'); // Debug log
+        notification.classList.add('closing');
+        setTimeout(() => {
+            notification.style.display = 'none';
+            notification.classList.remove('closing');
+        }, 300);
+    }
+}
+
+// Enhanced enable function
+function enableNotifications() {
+    console.log('Enable notifications clicked...'); // Debug log
+    if ("Notification" in window) {
+        Notification.requestPermission().then(function (permission) {
+            if (permission === "granted") {
+                alert("Notifications enabled successfully!");
+            } else {
+                alert("Notifications denied.");
+            }
+        });
+    } else {
+        alert("This browser doesn't support notifications.");
+    }
+    closeNotification();
+}
+
