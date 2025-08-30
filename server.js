@@ -188,10 +188,13 @@ server.on('request', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
+// Replace this line in your server.js:
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`[SERVER] WebSocket server running on port ${PORT}`);
-    console.log(`[SERVER] Health check available at http://localhost:${PORT}/health`);
+    console.log(`[SERVER] Access from mobile: ws://[YOUR-IP]:${PORT}`);
+    console.log(`[SERVER] Health check: http://[YOUR-IP]:${PORT}/health`);
 });
+
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
