@@ -1036,7 +1036,10 @@ function sendMessage() {
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
             type: 'message',
-            ...message,
+            id: message.id,
+            author: message.author,
+            content: message.content,
+            timestamp: message.timestamp,
             room: currentRoom
         }));
     } else {
