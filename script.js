@@ -113,13 +113,13 @@ function connectWebSocket() {
     // Use dynamic host detection for better mobile compatibility
     const protocol = (window.location.protocol === 'https:') ? 'wss://' : 'ws://';
     const host = window.location.hostname || 'localhost';
-    const port = '3001';
+    const port = '3002';
     
     // Try multiple connection protocols with dynamic host
     const protocols = [
         `${protocol}${host}:${port}`,
         `ws://${host}:${port}`,
-        'ws://localhost:3001'
+        'ws://localhost:3002'
     ];
     
     let protocolIndex = 0;

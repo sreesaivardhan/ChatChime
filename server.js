@@ -1,5 +1,7 @@
 const WebSocket = require('ws');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 const server = http.createServer();
 const wss = new WebSocket.Server({ server });
@@ -172,7 +174,7 @@ function generateMessageId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-// Health check endpoint
+// Static file server and health check endpoint
 server.on('request', (req, res) => {
     if (req.url === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -181,13 +183,46 @@ server.on('request', (req, res) => {
             connections: Object.keys(users).length,
             rooms: Object.keys(rooms).length 
         }));
-    } else {
-        res.writeHead(404);
-        res.end('Not Found');
+        return;
     }
+    
+    // Serve static files
+    let filePath = req.url === '/' ? '/index.html' : req.url;
+    const fullPath = path.join(__dirname, filePath);
+    
+    // Security check - prevent directory traversal
+    if (!fullPath.startsWith(__dirname)) {
+        res.writeHead(403);
+        res.end('Forbidden');
+        return;
+    }
+    
+    fs.readFile(fullPath, (err, data) => {
+        if (err) {
+            res.writeHead(404);
+            res.end('Not Found');
+            return;
+        }
+        
+        // Set content type based on file extension
+        const ext = path.extname(filePath);
+        const contentTypes = {
+            '.html': 'text/html',
+            '.css': 'text/css',
+            '.js': 'application/javascript',
+            '.ico': 'image/x-icon',
+            '.png': 'image/png',
+            '.jpg': 'image/jpeg',
+            '.gif': 'image/gif'
+        };
+        
+        const contentType = contentTypes[ext] || 'text/plain';
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.end(data);
+    });
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 // Replace this line in your server.js:
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`[SERVER] WebSocket server running on port ${PORT}`);

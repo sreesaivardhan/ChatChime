@@ -56,16 +56,26 @@ node server.js
 
 **Expected Output:**
 ```
-[SERVER] WebSocket server running on port 3001
-[SERVER] Access from mobile: ws://[YOUR-IP]:3001
-[SERVER] Health check: http://[YOUR-IP]:3001/health
+[SERVER] WebSocket server running on port 3002
+[SERVER] Access from mobile: ws://[YOUR-IP]:3002
+[SERVER] Health check: http://[YOUR-IP]:3002/health
 ```
 
 **⚠️ IMPORTANT: Keep this terminal window open - the server must be running for real-time features to work!**
 
-### Step 4: Start the Web Application
+### Step 4: Access the Web Application
 
-Open a **new terminal window/tab** (keep the server running) and choose one of these options:
+**✨ NEW: Built-in Static File Server!**
+
+The server now includes a built-in static file server, so you can access the application directly:
+
+```
+http://localhost:3002
+```
+
+**That's it!** No need for additional web servers. The Node.js server now handles both WebSocket connections and serves your HTML, CSS, JS, and favicon files.
+
+#### Alternative Options (if needed):
 
 #### Option A: Using Python (if installed)
 ```bash
@@ -86,14 +96,12 @@ Then visit: `http://localhost:8080`
 3. Right-click on `index.html`
 4. Select "Open with Live Server"
 
-#### Option D: Direct File Access (Limited Features)
-Simply open `index.html` in your browser, but note that some features may not work due to CORS restrictions.
-
 ## 🖥️ Server Configuration
 
-- **Default Port**: 3001 (WebSocket server)
-- **Health Check**: `http://localhost:3001/health`
-- **Change Port**: Set environment variable `PORT=3002 node server.js`
+- **Default Port**: 3002 (WebSocket + HTTP server)
+- **Health Check**: `http://localhost:3002/health`
+- **Web Application**: `http://localhost:3002`
+- **Change Port**: Set environment variable `PORT=3003 node server.js`
 
 ## 📱 Complete Testing Guide
 
@@ -106,7 +114,7 @@ Simply open `index.html` in your browser, but note that some features may not wo
    Verify you see the server startup messages.
 
 2. **Access the Application**:
-   - Open `http://localhost:8000` (or your chosen port)
+   - Open `http://localhost:3002`
    - You should see the login page with "ChatChime" branding
 
 3. **User Registration**:
@@ -162,14 +170,14 @@ Simply open `index.html` in your browser, but note that some features may not wo
 
 2. **Mobile Device Testing**:
    - Access the app on a mobile device using your computer's IP
-   - Example: `http://192.168.1.100:8000`
+   - Example: `http://192.168.1.100:3002`
    - **Verify**: Touch interactions work smoothly
 
 ## 🔍 Health Check & Monitoring
 
 Test the server health endpoint:
 ```bash
-curl http://localhost:3001/health
+curl http://localhost:3002/health
 ```
 
 Expected response:
@@ -185,14 +193,14 @@ Expected response:
 
 ### Server Issues
 
-**Problem**: "Port 3001 already in use"
+**Problem**: "Port 3002 already in use"
 ```bash
 # Windows
-netstat -ano | findstr :3001
+netstat -ano | findstr :3002
 taskkill /PID <PID> /F
 
 # macOS/Linux
-lsof -ti:3001 | xargs kill -9
+lsof -ti:3002 | xargs kill -9
 ```
 
 **Problem**: "WebSocket connection failed"
@@ -203,7 +211,7 @@ lsof -ti:3001 | xargs kill -9
 ### Client Issues
 
 **Problem**: "Cannot connect to WebSocket"
-- Verify server is running on port 3001
+- Verify server is running on port 3002
 - Check browser console (F12) for detailed errors
 - Try refreshing the page
 
@@ -234,6 +242,7 @@ chat-app/
 ├── style.css           # Complete styling and responsive design
 ├── script.js           # Client-side JavaScript (1669 lines)
 ├── server.js           # WebSocket server (207 lines)
+├── favicon.ico         # Application favicon
 ├── package.json        # Node.js dependencies
 ├── package-lock.json   # Dependency lock file
 ├── node_modules/       # Installed dependencies
@@ -267,8 +276,9 @@ chat-app/
 ## 🔧 Configuration Options
 
 ### Server Configuration (server.js):
-- **Port**: Default 3001, configurable via `PORT` environment variable
+- **Port**: Default 3002, configurable via `PORT` environment variable
 - **Host**: Binds to `0.0.0.0` for network access
+- **Static Files**: Built-in HTTP server for HTML, CSS, JS, and favicon
 - **Message Limits**: 1000 character limit per message
 - **Reconnection**: Auto-reconnect with exponential backoff
 
@@ -290,9 +300,8 @@ chat-app/
 - [ ] Node.js installed and `node --version` works
 - [ ] Run `npm install` in project directory
 - [ ] Start server with `node server.js`
-- [ ] Server shows "WebSocket server running on port 3001"
-- [ ] Start web server (Python/http-server/Live Server)
-- [ ] Open browser to `http://localhost:8000` (or your port)
+- [ ] Server shows "WebSocket server running on port 3002"
+- [ ] Open browser to `http://localhost:3002`
 - [ ] Can create username and access chat interface
 - [ ] Can send messages and see them in real-time
 - [ ] Multiple browser tabs can communicate
@@ -302,7 +311,7 @@ chat-app/
 If you encounter issues during setup:
 
 1. **Check Prerequisites**: Ensure Node.js is properly installed
-2. **Verify Ports**: Make sure ports 3001 and 8000 are available
+2. **Verify Ports**: Make sure port 3002 is available
 3. **Browser Console**: Check F12 console for JavaScript errors
 4. **Network**: Ensure no firewall is blocking the connections
 5. **Server Logs**: Monitor the `node server.js` terminal for error messages
