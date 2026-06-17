@@ -2,14 +2,14 @@
 
 A production-ready real-time chat application built with Node.js, Express, and Socket.IO. Deployed on Render (backend) and Netlify (frontend). No database, no auth service — just clean WebSocket-driven state.
 
-**Live demo:** [your-app.netlify.app](https://your-app.netlify.app)
+**Live demo:** [your-app.netlify.app](https://chat-chimes.netlify.app)
 
 ---
 
 ## Features (what actually works)
 
 | Feature | Status |
-|---|---|
+| :-- | :-- |
 | Real-time messaging across multiple users | ✅ |
 | Multiple chat rooms | ✅ |
 | Create / delete rooms (owner-only) | ✅ |
@@ -23,17 +23,19 @@ A production-ready real-time chat application built with Node.js, Express, and S
 | Mobile responsive layout | ✅ |
 | Browser push notifications (opt-in) | ✅ |
 
+
 ---
 
 ## Stack
 
 ```
-Frontend   plain HTML + CSS + Vanilla JS
-Backend    Node.js 18 · Express 4 · Socket.IO 4
-Hosting    Netlify (frontend) · Render (backend)
-Storage    none — all state is in-memory on the server
-Session    localStorage (username only)
+Frontend   plain HTML + CSS + Vanilla JS
+Backend    Node.js 18 · Express 4 · Socket.IO 4
+Hosting    Netlify (frontend) · Render (backend)
+Storage    none — all state is in-memory on the server
+Session    localStorage (username only)
 ```
+
 
 ---
 
@@ -46,11 +48,13 @@ git clone https://github.com/your-username/chatchime.git
 cd chatchime
 ```
 
+
 ### 2. Install dependencies
 
 ```bash
 npm install
 ```
+
 
 ### 3. Start the backend
 
@@ -60,6 +64,7 @@ npm start
 # → [SERVER] Health: http://localhost:3001/health
 ```
 
+
 ### 4. Serve the frontend
 
 The frontend is plain static files — use any HTTP server:
@@ -67,6 +72,7 @@ The frontend is plain static files — use any HTTP server:
 ```bash
 # Option A — npx (no install)
 npx serve .
+
 
 # Option B — VS Code Live Server
 # Right-click index.html → Open with Live Server
@@ -108,9 +114,7 @@ On Render, `PORT` is set automatically. Set `FRONTEND_ORIGIN` to your Netlify UR
 ## Deploy — Netlify (Frontend)
 
 1. Edit `config.js`:
-   ```js
-   window.BACKEND_URL = 'https://chatchime-api.onrender.com';
-   ```
+   ```js    window.BACKEND_URL = 'https://chatchime-api.onrender.com';    ```
 2. Commit and push
 3. Create new Netlify site → **Import from Git**
 4. **Build command:** *(leave empty)*
@@ -124,17 +128,18 @@ On Render, `PORT` is set automatically. Set `FRONTEND_ORIGIN` to your Netlify UR
 
 ```
 chatchime/
-├── index.html          Login page
-├── chat.html           Chat interface
-├── style.css           Full design system
-├── script.js           All client logic (Socket.IO, UI, profile)
-├── server.js           Express + Socket.IO backend
-├── config.js           BACKEND_URL configuration
-├── netlify.toml        Netlify publish + redirect config
-├── package.json        npm scripts + dependencies
-├── .env.example        Environment variable reference
+├── index.html          Login page
+├── chat.html           Chat interface
+├── style.css           Full design system
+├── script.js           All client logic (Socket.IO, UI, profile)
+├── server.js           Express + Socket.IO backend
+├── config.js           BACKEND_URL configuration
+├── netlify.toml        Netlify publish + redirect config
+├── package.json        npm scripts + dependencies
+├── .env.example        Environment variable reference
 └── .gitignore
 ```
+
 
 ---
 
@@ -149,10 +154,202 @@ chatchime/
 ## Demo Walkthrough
 
 1. Open the live URL — enter a username and click **Enter Chat**
-2. You land in the **#general** room. The green dot in the top bar confirms your Socket.IO connection
+2. You land in the **\#general** room. The green dot in the top bar confirms your Socket.IO connection
 3. Open a second browser tab, join as a different user — both users appear in the **In this room** sidebar panel
 4. Type in Tab 1 — Tab 2 shows a live typing indicator
 5. Send a message — it appears in both tabs instantly
 6. Click **+** in the sidebar → create a new room → both tabs see it appear in real time
 7. Click the **pen** icon on your profile → change your display name or pick an avatar colour → hit **Save**
 8. Drop the server — both tabs show the red **Disconnected** pill; restart and they reconnect automatically
+
+Here is the cleaned, accurate, and professional version:
+
+***
+
+# ChatChime — Real-Time Multi-Room Chat
+
+A production-ready real-time chat application built with Node.js, Express, and Socket.IO. Stateless backend with no database — all room and user state is managed in-memory over WebSocket connections. Deployed on a split architecture: backend on Render, frontend on Netlify.
+
+**Live demo:** [chat-chimes.netlify.app](https://chat-chimes.netlify.app)
+
+***
+
+## Features
+
+| Feature | Status |
+| :-- | :-- |
+| Real-time messaging across multiple users | ✅ |
+| Multiple chat rooms with live member counts | ✅ |
+| Create / delete rooms (creator-only delete) | ✅ |
+| Live typing indicators | ✅ |
+| Online user list per room | ✅ |
+| Duplicate username prevention (server-enforced) | ✅ |
+| Profile editing (display name + avatar colour) | ✅ |
+| Emoji picker | ✅ |
+| Message formatting (bold, italic, code) | ✅ |
+| Connection status indicator with auto-reconnect | ✅ |
+| Mobile-responsive layout (375px–1440px) | ✅ |
+| Browser push notifications (opt-in) | ✅ |
+
+
+***
+
+## Stack
+
+```
+Frontend   HTML5 · CSS3 · Vanilla JavaScript (ES6+)
+Backend    Node.js 18 · Express 4 · Socket.IO 4.7
+Hosting    Netlify (frontend) · Render (backend)
+Storage    In-memory (server state) · localStorage (username only)
+```
+
+No framework, no build step, no database. Intentionally minimal — the complexity is in the real-time logic, not the toolchain.
+
+***
+
+## Local Setup
+
+### 1. Clone
+
+```bash
+git clone https://github.com/sreesaivardhan/ChatChime
+cd ChatChime
+```
+
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+
+### 3. Start the backend
+
+```bash
+npm start
+# [SERVER] Running on port 3001
+# [SERVER] Health: http://localhost:3001/health
+# [SERVER] CORS allowed origin: http://localhost:3000
+```
+
+
+### 4. Serve the frontend
+
+The frontend is static — serve it over HTTP (not `file://`):
+
+```bash
+npx serve .
+```
+
+Open `http://localhost:3000` in your browser.
+
+> ⚠️ Must be served over HTTP. Opening `index.html` directly as a file will break the Socket.IO connection.
+
+***
+
+## Environment Variables
+
+Copy `.env.example` to `.env`:
+
+```bash
+cp .env.example .env
+```
+
+```dotenv
+# .env.example
+
+PORT=3001
+
+# Required in production. Defaults to http://localhost:3000 in local dev.
+# Set this to your Netlify URL on Render — no trailing slash.
+FRONTEND_ORIGIN=http://localhost:3000
+```
+
+The server will **crash on startup** if `FRONTEND_ORIGIN` is missing in a production environment. This is intentional — a misconfigured CORS origin in production is a silent failure that is hard to debug.
+
+***
+
+## Production Deploy
+
+### Backend — Render
+
+1. Push repo to GitHub
+2. Create a new Render **Web Service**, connect your repo
+3. Set the following:
+    - **Build command:** `npm install`
+    - **Start command:** `npm start`
+    - **Environment variable:** `FRONTEND_ORIGIN=https://your-site.netlify.app`
+4. Deploy and copy your Render URL
+5. Verify: `curl https://your-render-url.onrender.com/health`
+
+Expected response:
+
+```json
+{ "status": "ok", "connections": 0, "rooms": 3 }
+```
+
+
+### Frontend — Netlify
+
+1. Update `config.js` with your Render URL:
+
+```js
+window.BACKEND_URL = 'https://your-render-url.onrender.com';
+```
+
+2. Commit and push
+3. Create a new Netlify site → **Import from Git**
+4. **Build command:** *(leave empty)*
+5. **Publish directory:** `.`
+6. Deploy and open your Netlify URL
+
+***
+
+## Project Structure
+
+```
+chatchime/
+├── index.html        Login page
+├── chat.html         Chat interface
+├── style.css         Design system and responsive layout
+├── script.js         Client logic — Socket.IO, UI, profile, emoji
+├── server.js         Express + Socket.IO backend
+├── config.js         Environment-aware backend URL
+├── netlify.toml      Netlify publish and redirect config
+├── package.json      Dependencies and npm scripts
+├── .env.example      Environment variable reference
+└── .gitignore
+```
+
+
+***
+
+## Known Limitations
+
+- **No persistence** — chat history and rooms are cleared on every server restart
+- **Render free tier cold start** — the backend sleeps after 15 minutes of inactivity; the first connection after a cold start may take 20–40 seconds. Hit `/health` once to wake it before demoing.
+
+***
+
+## Resume Bullets
+
+- Built a full-stack real-time chat application using Node.js, Express, and Socket.IO — supporting concurrent multi-room messaging, live typing indicators, server-side user presence tracking, and duplicate username prevention across sessions
+- Implemented a split-deploy production architecture with a stateless Socket.IO backend on Render and a static frontend on Netlify — configured production CORS locking, environment-aware URL injection, and graceful SIGTERM shutdown
+- Delivered a mobile-responsive UI with profile customisation, emoji picker, message formatting, connection status indicator, and auto-reconnect — approximately 700 lines of vanilla JavaScript with zero frontend dependencies
+
+***
+
+## Demo Script (2 minutes)
+
+1. Open the live URL → enter a username → **Enter Chat**
+2. The green dot in the topbar confirms the WebSocket connection
+3. Open a second tab with a different username — both users appear in the sidebar
+4. Type in Tab 1 — Tab 2 shows a live typing indicator in real time
+5. Send a message — instant delivery to both tabs
+6. Click **+** in the sidebar → create a new room → both tabs see it appear immediately
+7. Click the **pen** icon on your profile → change display name or avatar colour → **Save**
+8. Try logging in as the same username from a third tab — the server rejects it with an error
+
+
+
