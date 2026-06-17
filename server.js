@@ -108,6 +108,17 @@ io.on('connection', (socket) => {
 
         const prev = socketMeta.get(socket.id);
 
+        const isNewOrDifferentName = !prev || prev.username.toLowerCase() !== username.toLowerCase();
+        if (isNewOrDifferentName) {
+            const isTaken = Array.from(socketMeta.values()).some(
+                meta => meta.username.toLowerCase() === username.toLowerCase()
+            );
+            if (isTaken) {
+                socket.emit('error_msg', 'Username is already taken. Please choose a different name.');
+                return;
+            }
+        }
+
         // Leave previous room
         if (prev && prev.roomId) {
             socket.leave(prev.roomId);

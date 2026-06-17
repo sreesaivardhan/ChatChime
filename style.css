@@ -65,12 +65,13 @@ button { cursor: pointer; font-family: var(--font); border: none; background: no
 
 .icon-btn {
     display: flex; align-items: center; justify-content: center;
-    width: 30px; height: 30px;
+    width: 40px; height: 40px;
     border-radius: var(--r-sm);
     color: var(--text-lo);
     transition: background var(--t), color var(--t);
     flex-shrink: 0;
 }
+.icon-btn i { font-size: 16px; }
 .icon-btn:hover { background: var(--surface); color: var(--text-hi); }
 .icon-btn.accent { color: var(--accent); }
 .icon-btn.accent:hover { background: var(--accent-dim); }
@@ -266,7 +267,7 @@ textarea::placeholder { color: var(--text-lo); }
 .sidebar-overlay.visible { display: block; }
 
 .chat-layout {
-    display: flex; height: 100vh;
+    display: flex; height: 100dvh;
     opacity: 0; transition: opacity .3s ease;
 }
 .chat-layout.loaded { opacity: 1; }
@@ -513,12 +514,12 @@ textarea::placeholder { color: var(--text-lo); }
 }
 .fmt-btn {
     display: flex; align-items: center; justify-content: center;
-    width: 28px; height: 28px;
+    width: 40px; height: 40px;
     border-radius: var(--r-sm);
     color: var(--text-lo);
-    font-size: 12px;
     transition: background var(--t), color var(--t);
 }
+.fmt-btn i { font-size: 18px; }
 .fmt-btn:hover { background: var(--surface); color: var(--text-hi); }
 .fmt-btn.emoji-trigger { margin-left: auto; }
 
@@ -700,6 +701,9 @@ textarea::placeholder { color: var(--text-lo); }
 
     .modal-backdrop { align-items: flex-end; padding: 0; }
     .modal { border-radius: var(--r-lg) var(--r-lg) 0 0; max-width: 100%; }
+
+    .icon-btn, .fmt-btn { width: 44px; height: 44px; }
+    .mobile-topbar .icon-btn i { font-size: 22px; }
 }
 
 /* scrollbar thin global */

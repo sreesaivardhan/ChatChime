@@ -66,6 +66,13 @@ function initializeLoginPage() {
     const ov = document.getElementById('loading-overlay');
     if (ov) ov.style.display = 'none';
 
+    const loginError = localStorage.getItem('loginError');
+    if (loginError) {
+        const err = document.getElementById('error-message');
+        if (err) err.textContent = loginError;
+        localStorage.removeItem('loginError');
+    }
+
     const input  = document.getElementById('username');
     const btn    = document.getElementById('login-btn');
     if (input) {
@@ -184,7 +191,15 @@ function connectSocket() {
             setTimeout(() => joinRoom(redirectTo || 'general'), 800);
         }
     });
-    socket.on('error_msg', msg => toast(msg, 'error'));
+    socket.on('error_msg', msg => {
+        if (msg.includes('already taken')) {
+            localStorage.removeItem('chatUsername');
+            localStorage.setItem('loginError', msg);
+            window.location.replace('index.html');
+        } else {
+            toast(msg, 'error');
+        }
+    });
 }
 
 function rejoinRoom() {
