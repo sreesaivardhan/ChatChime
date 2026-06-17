@@ -2,7 +2,7 @@
 
 A production-ready real-time chat application built with Node.js, Express, and Socket.IO. Deployed on Render (backend) and Netlify (frontend). No database, no auth service — just clean WebSocket-driven state.
 
-**Live demo:** [your-app.netlify.app](https://chat-chimes.netlify.app)
+**Live demo:** [https://chat-chimes.netlify.app](https://chat-chimes.netlify.app)
 
 ---
 
