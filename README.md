@@ -1,321 +1,158 @@
-# ChatChime - Real-Time Chat Application
+# ChatChime — Real-Time Multi-Room Chat
 
-A modern, real-time chat application built with WebSocket technology, featuring multiple chat rooms, user authentication, and mobile-responsive design.
+A production-ready real-time chat application built with Node.js, Express, and Socket.IO. Deployed on Render (backend) and Netlify (frontend). No database, no auth service — just clean WebSocket-driven state.
 
-## 🚀 Features
-
-- **Real-time messaging** with WebSocket technology
-- **Multiple chat rooms** with custom room creation
-- **User authentication** with username validation
-- **Mobile-responsive design** optimized for all devices
-- **Emoji support** with interactive emoji picker
-- **Typing indicators** to show when users are typing
-- **Message formatting** (bold, italic, code)
-- **Online user tracking** with live user count
-- **Notification support** for new messages
-- **Auto-reconnection** for stable connections
-
-## 🛠️ Technologies Used
-
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **Backend**: Node.js with WebSocket (ws library)
-- **Real-time Communication**: WebSocket protocol
-- **Storage**: LocalStorage for client-side data persistence
-- **Icons**: Font Awesome 6.0.0
-- **Mobile Support**: Touch events and responsive design
-
-## 📋 Prerequisites
-
-Before running this project, ensure you have:
-
-- **Node.js** (version 14.0 or higher) - [Download here](https://nodejs.org/)
-- **npm** (comes with Node.js)
-- A modern web browser (Chrome, Firefox, Safari, Edge)
-
-## 🔧 Complete Setup Instructions
-
-### Step 1: Download/Clone the Project
-```bash
-# If using Git
-git clone <repository-url>
-cd chat-app
-
-# Or download and extract the ZIP file to a folder named 'chat-app'
-```
-
-### Step 2: Install Dependencies
-```bash
-npm install
-```
-This installs the WebSocket library (`ws`) required for the server.
-
-### Step 3: Start the WebSocket Server
-```bash
-node server.js
-```
-
-**Expected Output:**
-```
-[SERVER] WebSocket server running on port 3002
-[SERVER] Access from mobile: ws://[YOUR-IP]:3002
-[SERVER] Health check: http://[YOUR-IP]:3002/health
-```
-
-**⚠️ IMPORTANT: Keep this terminal window open - the server must be running for real-time features to work!**
-
-### Step 4: Access the Web Application
-
-**✨ NEW: Built-in Static File Server!**
-
-The server now includes a built-in static file server, so you can access the application directly:
-
-```
-http://localhost:3002
-```
-
-**That's it!** No need for additional web servers. The Node.js server now handles both WebSocket connections and serves your HTML, CSS, JS, and favicon files.
-
-#### Alternative Options (if needed):
-
-#### Option A: Using Python (if installed)
-```bash
-python -m http.server 8000
-```
-Then visit: `http://localhost:8000`
-
-#### Option B: Using Node.js http-server
-```bash
-npm install -g http-server
-http-server
-```
-Then visit: `http://localhost:8080`
-
-#### Option C: Using VS Code Live Server
-1. Open the project folder in VS Code
-2. Install the "Live Server" extension
-3. Right-click on `index.html`
-4. Select "Open with Live Server"
-
-## 🖥️ Server Configuration
-
-- **Default Port**: 3002 (WebSocket + HTTP server)
-- **Health Check**: `http://localhost:3002/health`
-- **Web Application**: `http://localhost:3002`
-- **Change Port**: Set environment variable `PORT=3003 node server.js`
-
-## 📱 Complete Testing Guide
-
-### 1. Basic Application Test
-
-1. **Start the Server**:
-   ```bash
-   node server.js
-   ```
-   Verify you see the server startup messages.
-
-2. **Access the Application**:
-   - Open `http://localhost:3002`
-   - You should see the login page with "ChatChime" branding
-
-3. **User Registration**:
-   - Enter a username (3-20 characters, letters/numbers/underscores only)
-   - Click "Join Chat"
-   - Should redirect to the main chat interface
-
-### 2. Real-Time Features Test
-
-1. **Multiple Users Simulation**:
-   - Open the app in 2-3 different browser tabs/windows
-   - Use different usernames for each tab
-   - All should connect successfully
-
-2. **Room Functionality**:
-   - Click on "General" room in the sidebar
-   - Send a message from one tab
-   - **Verify**: Message appears instantly in all other tabs
-   - **Verify**: User count updates in the sidebar
-
-3. **Typing Indicators**:
-   - Start typing in one tab
-   - **Verify**: Other tabs show "[Username] is typing..."
-   - Stop typing
-   - **Verify**: Typing indicator disappears
-
-### 3. Advanced Features Test
-
-1. **Room Management**:
-   - Click the "+" button next to "Rooms"
-   - Create a new room with name and description
-   - **Verify**: New room appears in all connected clients
-   - **Verify**: Can switch between rooms
-
-2. **Message Formatting**:
-   - Send message with `**bold text**`
-   - Send message with `*italic text*`
-   - Send message with `` `code text` ``
-   - **Verify**: Formatting is applied correctly
-
-3. **Emoji Support**:
-   - Click the emoji button in the toolbar
-   - Select an emoji
-   - **Verify**: Emoji is inserted into the message
-
-### 4. Mobile Responsiveness Test
-
-1. **Responsive Design**:
-   - Resize browser window to mobile size (< 768px width)
-   - **Verify**: Sidebar becomes collapsible
-   - **Verify**: Hamburger menu appears
-   - **Verify**: All buttons are touch-friendly
-
-2. **Mobile Device Testing**:
-   - Access the app on a mobile device using your computer's IP
-   - Example: `http://192.168.1.100:3002`
-   - **Verify**: Touch interactions work smoothly
-
-## 🔍 Health Check & Monitoring
-
-Test the server health endpoint:
-```bash
-curl http://localhost:3002/health
-```
-
-Expected response:
-```json
-{
-  "status": "ok",
-  "connections": 2,
-  "rooms": 3
-}
-```
-
-## 🐛 Troubleshooting Guide
-
-### Server Issues
-
-**Problem**: "Port 3002 already in use"
-```bash
-# Windows
-netstat -ano | findstr :3002
-taskkill /PID <PID> /F
-
-# macOS/Linux
-lsof -ti:3002 | xargs kill -9
-```
-
-**Problem**: "WebSocket connection failed"
-- Ensure `node server.js` is running
-- Check firewall settings
-- Try restarting the server
-
-### Client Issues
-
-**Problem**: "Cannot connect to WebSocket"
-- Verify server is running on port 3002
-- Check browser console (F12) for detailed errors
-- Try refreshing the page
-
-**Problem**: "Messages not appearing in real-time"
-- Ensure multiple tabs are connected to the same server
-- Check WebSocket connection status in browser dev tools
-- Verify no ad blockers are interfering
-
-**Problem**: "Mobile menu not working"
-- Test on actual mobile device or browser dev tools mobile mode
-- Ensure touch events are enabled
-- Clear browser cache
-
-### Browser Console Debugging
-
-Open Developer Tools (F12) → Console tab to see:
-- WebSocket connection status
-- Message sending/receiving logs
-- JavaScript errors
-- User actions and room changes
-
-## 📁 Project Structure
-
-```
-chat-app/
-├── index.html          # Login/authentication page
-├── chat.html           # Main chat interface
-├── style.css           # Complete styling and responsive design
-├── script.js           # Client-side JavaScript (1669 lines)
-├── server.js           # WebSocket server (207 lines)
-├── favicon.ico         # Application favicon
-├── package.json        # Node.js dependencies
-├── package-lock.json   # Dependency lock file
-├── node_modules/       # Installed dependencies
-└── README.md           # This comprehensive guide
-```
-
-## 🚀 Key Functionalities to Demonstrate
-
-### For Your Project Manager:
-
-1. **Real-time Communication**:
-   - Open multiple browser tabs
-   - Show instant message delivery
-   - Demonstrate typing indicators
-
-2. **Room Management**:
-   - Create custom rooms
-   - Switch between rooms
-   - Show room member counts
-
-3. **User Experience**:
-   - Mobile-responsive design
-   - Emoji picker functionality
-   - Message formatting options
-
-4. **Technical Features**:
-   - WebSocket connection handling
-   - Auto-reconnection on network issues
-   - LocalStorage data persistence
-
-## 🔧 Configuration Options
-
-### Server Configuration (server.js):
-- **Port**: Default 3002, configurable via `PORT` environment variable
-- **Host**: Binds to `0.0.0.0` for network access
-- **Static Files**: Built-in HTTP server for HTML, CSS, JS, and favicon
-- **Message Limits**: 1000 character limit per message
-- **Reconnection**: Auto-reconnect with exponential backoff
-
-### Client Configuration (script.js):
-- **Username Validation**: 3-20 characters, alphanumeric + underscore
-- **Message History**: Stored in browser LocalStorage
-- **Typing Timeout**: 3 seconds
-- **Max Reconnection Attempts**: 5 attempts
-
-## 📊 Performance Notes
-
-- **Concurrent Users**: Tested with up to 50 simultaneous connections
-- **Message Throughput**: Handles 100+ messages per second
-- **Memory Usage**: ~50MB for server with 20 active connections
-- **Browser Compatibility**: Works on all modern browsers (Chrome 60+, Firefox 55+, Safari 11+, Edge 79+)
-
-## 🆘 Quick Start Checklist
-
-- [ ] Node.js installed and `node --version` works
-- [ ] Run `npm install` in project directory
-- [ ] Start server with `node server.js`
-- [ ] Server shows "WebSocket server running on port 3002"
-- [ ] Open browser to `http://localhost:3002`
-- [ ] Can create username and access chat interface
-- [ ] Can send messages and see them in real-time
-- [ ] Multiple browser tabs can communicate
-
-## 📞 Support
-
-If you encounter issues during setup:
-
-1. **Check Prerequisites**: Ensure Node.js is properly installed
-2. **Verify Ports**: Make sure port 3002 is available
-3. **Browser Console**: Check F12 console for JavaScript errors
-4. **Network**: Ensure no firewall is blocking the connections
-5. **Server Logs**: Monitor the `node server.js` terminal for error messages
+**Live demo:** [your-app.netlify.app](https://your-app.netlify.app)
 
 ---
 
-**Ready to test!** Follow the setup steps above, and you'll have a fully functional real-time chat application running locally.
+## Features (what actually works)
+
+| Feature | Status |
+|---|---|
+| Real-time messaging across multiple users | ✅ |
+| Multiple chat rooms | ✅ |
+| Create / delete rooms (owner-only) | ✅ |
+| Live typing indicators | ✅ |
+| Online user list per room | ✅ |
+| Profile editing (display name + avatar colour) | ✅ |
+| Emoji picker | ✅ |
+| Message formatting (bold, italic, code) | ✅ |
+| Connection status indicator | ✅ |
+| Auto-reconnect on drop | ✅ |
+| Mobile responsive layout | ✅ |
+| Browser push notifications (opt-in) | ✅ |
+
+---
+
+## Stack
+
+```
+Frontend   plain HTML + CSS + Vanilla JS
+Backend    Node.js 18 · Express 4 · Socket.IO 4
+Hosting    Netlify (frontend) · Render (backend)
+Storage    none — all state is in-memory on the server
+Session    localStorage (username only)
+```
+
+---
+
+## Local Setup
+
+### 1. Clone
+
+```bash
+git clone https://github.com/your-username/chatchime.git
+cd chatchime
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Start the backend
+
+```bash
+npm start
+# → [SERVER] Running on port 3001
+# → [SERVER] Health: http://localhost:3001/health
+```
+
+### 4. Serve the frontend
+
+The frontend is plain static files — use any HTTP server:
+
+```bash
+# Option A — npx (no install)
+npx serve .
+
+# Option B — VS Code Live Server
+# Right-click index.html → Open with Live Server
+```
+
+Open `http://localhost:3000` (or whichever port `serve` picks).
+
+> ⚠️ Must be served over HTTP, not opened as `file://` — Socket.IO requires an HTTP origin.
+
+---
+
+## Environment Variables
+
+Create a `.env` file (see `.env.example`):
+
+```
+PORT=3001
+FRONTEND_ORIGIN=*
+```
+
+On Render, `PORT` is set automatically. Set `FRONTEND_ORIGIN` to your Netlify URL in production.
+
+---
+
+## Deploy — Render (Backend)
+
+1. Push repo to GitHub
+2. Create new Render **Web Service**
+3. **Build command:** `npm install`
+4. **Start command:** `npm start`
+5. **Environment variable:** `FRONTEND_ORIGIN=https://your-app.netlify.app`
+6. Deploy → copy your Render URL (e.g. `https://chatchime-api.onrender.com`)
+7. Verify: `curl https://chatchime-api.onrender.com/health`
+
+> 💡 Render free tier sleeps after 15 min of inactivity. Use UptimeRobot to ping `/health` every 10 min if you're demoing.
+
+---
+
+## Deploy — Netlify (Frontend)
+
+1. Edit `config.js`:
+   ```js
+   window.BACKEND_URL = 'https://chatchime-api.onrender.com';
+   ```
+2. Commit and push
+3. Create new Netlify site → **Import from Git**
+4. **Build command:** *(leave empty)*
+5. **Publish directory:** `.`
+6. Deploy → open your Netlify URL
+7. Test with two browser tabs
+
+---
+
+## Project Structure
+
+```
+chatchime/
+├── index.html          Login page
+├── chat.html           Chat interface
+├── style.css           Full design system
+├── script.js           All client logic (Socket.IO, UI, profile)
+├── server.js           Express + Socket.IO backend
+├── config.js           BACKEND_URL configuration
+├── netlify.toml        Netlify publish + redirect config
+├── package.json        npm scripts + dependencies
+├── .env.example        Environment variable reference
+└── .gitignore
+```
+
+---
+
+## Resume Bullet Points
+
+- **Built a full-stack real-time chat application** using Node.js, Express, and Socket.IO — supporting multiple concurrent rooms, live typing indicators, and server-driven online user tracking across all connected clients
+- **Implemented a clean split-deploy architecture** with a stateless Socket.IO backend on Render and a plain HTML/CSS/JS frontend on Netlify, demonstrating production deployment, CORS configuration, and environment-aware URL injection without any build tooling
+- **Delivered a polished, mobile-responsive UI** with profile customisation (display name + avatar colour), emoji picker, message formatting (bold/italic/code), connection status indicator, and auto-reconnect — all in ~700 lines of vanilla JavaScript with zero dependencies on the frontend
+
+---
+
+## Demo Walkthrough
+
+1. Open the live URL — enter a username and click **Enter Chat**
+2. You land in the **#general** room. The green dot in the top bar confirms your Socket.IO connection
+3. Open a second browser tab, join as a different user — both users appear in the **In this room** sidebar panel
+4. Type in Tab 1 — Tab 2 shows a live typing indicator
+5. Send a message — it appears in both tabs instantly
+6. Click **+** in the sidebar → create a new room → both tabs see it appear in real time
+7. Click the **pen** icon on your profile → change your display name or pick an avatar colour → hit **Save**
+8. Drop the server — both tabs show the red **Disconnected** pill; restart and they reconnect automatically

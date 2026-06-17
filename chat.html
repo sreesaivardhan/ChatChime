@@ -1,227 +1,250 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatApp - Chat</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ChatChime</title>
+    <meta name="description" content="ChatChime real-time chat.">
+    <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="chat-body">
-    <!-- Mobile Menu Toggle -->
-    <button class="mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle menu">
-        <i class="fas fa-bars"></i>
-    </button>
 
-    <div class="chat-container">
-        <!-- Sidebar -->
+<body class="chat-body">
+
+    <!-- Mobile header bar -->
+    <div class="mobile-topbar" id="mobile-topbar">
+        <button class="icon-btn" id="mobile-menu-toggle" aria-label="Toggle sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
+        <span class="mobile-room-title" id="mobile-room-title">ChatChime</span>
+        <button class="icon-btn" id="mobile-emoji-btn" aria-label="Emoji">
+            <i class="fas fa-face-smile"></i>
+        </button>
+    </div>
+
+    <!-- Sidebar overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <div class="chat-layout">
+        <!-- ── Sidebar ───────────────────────────────── -->
         <aside class="sidebar" id="sidebar">
-            <!-- User Info -->
-            <div class="sidebar-header">
-                <div class="user-info">
-                    <div class="user-avatar"></div>
-                    <div class="user-details">
-                        <h3 id="current-username">User</h3>
-                        <div class="user-status online">
-                            <i class="fas fa-circle"></i>
-                            Online
-                        </div>
-                    </div>
-                </div>
-                <button class="logout-btn" id="logout-btn" title="Logout">
-                    <i class="fas fa-sign-out-alt"></i>
+
+            <!-- Brand + close -->
+            <div class="sidebar-brand">
+                <div class="brand-mark"><i class="fas fa-comment-dots"></i> ChatChime</div>
+                <button class="icon-btn sidebar-close" id="sidebar-close" aria-label="Close sidebar">
+                    <i class="fas fa-xmark"></i>
                 </button>
             </div>
 
-            <!-- Rooms Section -->
-            <div class="rooms-section">
-                <div class="section-header">
-                    <h4><i class="fas fa-hashtag"></i> Rooms</h4>
-                    <button class="create-room-btn" id="create-room-btn" title="Create room">
+            <!-- User profile -->
+            <div class="sidebar-profile" id="sidebar-profile" title="Edit profile">
+                <div class="avatar" id="user-avatar-sidebar"></div>
+                <div class="profile-info">
+                    <span class="profile-name" id="current-username">—</span>
+                    <span class="profile-status">
+                        <span class="status-dot connected" id="sidebar-status-dot"></span>
+                        <span id="sidebar-status-label">Online</span>
+                    </span>
+                </div>
+                <button class="icon-btn edit-profile-btn" id="edit-profile-btn" title="Edit display name">
+                    <i class="fas fa-pen"></i>
+                </button>
+            </div>
+
+            <!-- Rooms -->
+            <div class="sidebar-section">
+                <div class="section-label">
+                    <span><i class="fas fa-hashtag"></i> Rooms</span>
+                    <button class="icon-btn accent" id="create-room-btn" title="New room">
                         <i class="fas fa-plus"></i>
                     </button>
                 </div>
-                <ul class="room-list" id="room-list">
-                    <!-- Rooms will be populated by JavaScript -->
-                </ul>
+                <ul class="room-list" id="room-list"></ul>
             </div>
 
-            <!-- Online Users Section -->
-            <div class="online-users-section">
-                <div class="section-header">
-                    <h4><i class="fas fa-users"></i> Online</h4>
-                    <span class="user-count" id="user-count">0</span>
+            <!-- Online users -->
+            <div class="sidebar-section sidebar-section--users">
+                <div class="section-label">
+                    <span><i class="fas fa-circle-dot"></i> In this room</span>
+                    <span class="badge" id="user-count">0</span>
                 </div>
-                <ul class="online-users-list" id="online-users">
-                    <!-- Online users will be populated by JavaScript -->
-                </ul>
+                <ul class="users-list" id="online-users"></ul>
+            </div>
+
+            <!-- Logout -->
+            <div class="sidebar-footer">
+                <button class="sidebar-logout" id="logout-btn">
+                    <i class="fas fa-arrow-right-from-bracket"></i>
+                    Sign out
+                </button>
             </div>
         </aside>
 
-        <!-- Chat Area -->
-        <main class="chat-area">
-            <!-- Chat Header -->
-            <header class="chat-header">
-                <div class="room-info">
-                    <h3 id="current-room">Select a room</h3>
-                    <span class="room-members" id="room-members">0 members</span>
+        <!-- ── Chat area ─────────────────────────────── -->
+        <main class="chat-main">
+
+            <!-- Top bar -->
+            <header class="chat-topbar">
+                <div class="room-label">
+                    <span class="room-hash">#</span>
+                    <h2 id="current-room">general</h2>
+                    <span class="room-count" id="room-members"></span>
                 </div>
-                <div class="chat-controls">
-                    <button class="control-btn" id="notification-toggle-btn" title="Toggle notifications">
-                        <i class="fas fa-bell-slash"></i>
+                <div class="topbar-actions">
+                    <div class="conn-pill" id="connection-status">
+                        <span class="status-dot" id="status-dot"></span>
+                        <span id="status-label">Connecting</span>
+                    </div>
+                    <button class="icon-btn" id="clear-chat-btn" title="Clear messages">
+                        <i class="fas fa-eraser"></i>
                     </button>
-                    <button class="control-btn" id="clear-chat-btn" title="Clear chat">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                    <button class="control-btn" id="emoji-btn" title="Emoji picker">
-                        <i class="fas fa-smile"></i>
+                    <button class="icon-btn" id="notification-toggle-btn" title="Toggle notifications">
+                        <i class="fas fa-bell"></i>
                     </button>
                 </div>
             </header>
 
-            <!-- Messages Area -->
+            <!-- Messages -->
             <div class="messages" id="messages">
-                <div class="welcome-message">
+                <div class="empty-state">
                     <i class="fas fa-comments"></i>
-                    <h3>Welcome to ChatApp!</h3>
-                    <p>Select a room to start chatting or create a new one.</p>
+                    <p>Select a room to start chatting</p>
                 </div>
             </div>
 
-            <!-- Typing Indicator -->
-            <div class="typing-indicator" id="typing-indicator" style="display: none;">
-                <div class="typing-animation">
-                    <span></span>
-                    <span></span>
-                    <span></span>
+            <!-- Typing indicator -->
+            <div class="typing-bar" id="typing-indicator" style="display:none">
+                <div class="typing-dots">
+                    <span></span><span></span><span></span>
                 </div>
                 <span class="typing-text"></span>
             </div>
 
-            <!-- Input Area -->
+            <!-- Input area -->
             <div class="input-area">
-                <!-- Formatting Toolbar -->
-                <div class="formatting-toolbar">
-                    <button class="format-btn" id="bold-btn" title="Bold (Ctrl+B)">
-                        <i class="fas fa-bold"></i>
-                    </button>
-                    <button class="format-btn" id="italic-btn" title="Italic (Ctrl+I)">
-                        <i class="fas fa-italic"></i>
-                    </button>
-                    <button class="format-btn" id="code-btn" title="Code">
-                        <i class="fas fa-code"></i>
-                    </button>
-                    <button class="format-btn" id="emoji-toolbar-btn" title="Emoji">
-                        <i class="fas fa-smile"></i>
+                <div class="format-bar">
+                    <button class="fmt-btn" id="bold-btn" title="Bold"><i class="fas fa-bold"></i></button>
+                    <button class="fmt-btn" id="italic-btn" title="Italic"><i class="fas fa-italic"></i></button>
+                    <button class="fmt-btn" id="code-btn" title="Code"><i class="fas fa-code"></i></button>
+                    <button class="fmt-btn emoji-trigger" id="emoji-trigger-btn" title="Emoji">
+                        <i class="fas fa-face-smile"></i>
                     </button>
                 </div>
-
-                <!-- Input Container -->
-                <div class="input-container">
-                    <textarea 
-                        id="message-input" 
-                        placeholder="Type your message..." 
-                        rows="1"
-                        maxlength="1000"
-                    ></textarea>
-                    <div class="input-actions">
-                        <button class="send-btn" id="send-btn" title="Send message">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
+                <div class="input-row">
+                    <textarea id="message-input" placeholder="Message #general…" rows="1" maxlength="1000"></textarea>
+                    <button class="send-btn" id="send-btn" title="Send">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
                 </div>
-
-                <!-- Character Count -->
-                <div class="character-count" id="character-count">0/1000</div>
+                <div class="char-count" id="character-count">0 / 1000</div>
             </div>
         </main>
     </div>
 
-    <!-- Emoji Picker -->
-    <div class="emoji-picker" id="emoji-picker" style="display: none;">
-        <div class="emoji-header">
-            <h4>Choose an emoji</h4>
-            <button id="emoji-close-btn" title="Close">
-                <i class="fas fa-times"></i>
-            </button>
+    <!-- Emoji picker (single instance, anchored to bottom of input area) -->
+    <div class="emoji-picker" id="emoji-picker" hidden>
+        <div class="emoji-picker-header">
+            <span>Emoji</span>
+            <button class="icon-btn" id="emoji-close-btn"><i class="fas fa-xmark"></i></button>
         </div>
-        <div class="emoji-grid" id="emoji-grid">
-            <!-- Emojis will be populated by JavaScript -->
+        <div class="emoji-grid" id="emoji-grid"></div>
+    </div>
+
+    <!-- Profile edit modal -->
+    <div class="modal-backdrop" id="profile-modal" hidden>
+        <div class="modal">
+            <div class="modal-head">
+                <h3>Edit Profile</h3>
+                <button class="icon-btn" id="close-profile-modal"><i class="fas fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="field-group">
+                    <label for="profile-name-input">Display name</label>
+                    <div class="field-wrap">
+                        <i class="fas fa-user field-icon"></i>
+                        <input type="text" id="profile-name-input" maxlength="20" placeholder="Your username">
+                    </div>
+                    <div class="field-hint">3–20 characters · letters, numbers, underscores</div>
+                </div>
+                <div class="field-group">
+                    <label>Avatar colour</label>
+                    <div class="avatar-colors" id="avatar-colors"></div>
+                </div>
+            </div>
+            <div class="modal-foot">
+                <button class="btn-ghost" id="cancel-profile-modal">Cancel</button>
+                <button class="btn-primary" id="save-profile-btn">Save changes</button>
+            </div>
         </div>
     </div>
 
-    <!-- Create Room Modal -->
-    <div class="modal-overlay" id="create-room-modal" style="display: none;">
+    <!-- Create room modal -->
+    <div class="modal-backdrop" id="create-room-modal" hidden>
         <div class="modal">
-            <div class="modal-header">
-                <h3>Create New Room</h3>
-                <button id="close-create-room-modal">
-                    <i class="fas fa-times"></i>
-                </button>
+            <div class="modal-head">
+                <h3>New Room</h3>
+                <button class="icon-btn" id="close-create-room-modal"><i class="fas fa-xmark"></i></button>
             </div>
             <div class="modal-body">
-                <div class="input-group">
-                    <label for="room-name-input">Room Name *</label>
-                    <input type="text" id="room-name-input" placeholder="Enter room name" maxlength="50" required>
+                <div class="field-group">
+                    <label for="room-name-input">Room name <span class="required">*</span></label>
+                    <div class="field-wrap">
+                        <i class="fas fa-hashtag field-icon"></i>
+                        <input type="text" id="room-name-input" placeholder="e.g. design-feedback" maxlength="50">
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="room-desc-input">Description</label>
-                    <textarea id="room-desc-input" placeholder="Enter room description (optional)" maxlength="200"></textarea>
+                <div class="field-group">
+                    <label for="room-desc-input">Description <span class="optional">(optional)</span></label>
+                    <textarea id="room-desc-input" placeholder="What's this room for?" maxlength="200"
+                        rows="2"></textarea>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" id="cancel-create-room-modal">Cancel</button>
+            <div class="modal-foot">
+                <button class="btn-ghost" id="cancel-create-room-modal">Cancel</button>
                 <button class="btn-primary" id="create-room-confirm">
-                    <i class="fas fa-plus"></i>
-                    Create Room
+                    <i class="fas fa-plus"></i> Create room
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Delete Room Modal -->
-    <div class="modal-overlay" id="delete-room-modal" style="display: none;">
+    <!-- Delete room modal -->
+    <div class="modal-backdrop" id="delete-room-modal" hidden>
         <div class="modal">
-            <div class="modal-header">
+            <div class="modal-head">
                 <h3>Delete Room</h3>
-                <button id="close-delete-room-modal">
-                    <i class="fas fa-times"></i>
-                </button>
+                <button class="icon-btn" id="close-delete-room-modal"><i class="fas fa-xmark"></i></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete the room "<span id="delete-room-name"></span>"?</p>
-                <p style="color: var(--error-color); margin-top: 10px;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    This action cannot be undone and all messages will be lost.
-                </p>
+                <p>Are you sure you want to delete <strong id="delete-room-name"></strong>?</p>
+                <p class="warning-text"><i class="fas fa-triangle-exclamation"></i> All messages will be lost and
+                    members moved to General.</p>
             </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" id="cancel-delete-room">Cancel</button>
-                <button class="btn-primary" id="confirm-delete-room" style="background: var(--error-color);">
-                    <i class="fas fa-trash"></i>
-                    Delete Room
+            <div class="modal-foot">
+                <button class="btn-ghost" id="cancel-delete-room">Cancel</button>
+                <button class="btn-danger" id="confirm-delete-room">
+                    <i class="fas fa-trash"></i> Delete
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Notification Request -->
-    <div class="notification-request" id="notification-request" style="display: none;">
-        <button class="notification-close" onclick="closeNotification()" type="button">&times;</button>
-        <div class="notification-content">
-            <i class="fas fa-bell" style="color: var(--primary-color); font-size: 1.5rem;"></i>
-            <div>
-                <h4 style="color: var(--text-primary); margin-bottom: 0.5rem;">Enable Notifications</h4>
-                <p style="color: var(--text-secondary); margin: 0;">Stay updated with new messages</p>
-            </div>
-        </div>
-        <div class="notification-actions">
-            <button type="button" onclick="enableNotifications()">Enable</button>
-            <button type="button" onclick="closeNotification()">Later</button>
-        </div>
+    <!-- Notification banner -->
+    <div class="notif-banner" id="notification-request" hidden>
+        <i class="fas fa-bell"></i>
+        <span>Enable notifications to stay updated</span>
+        <button class="btn-sm-accent" onclick="enableNotifications()">Enable</button>
+        <button class="icon-btn" onclick="closeNotification()"><i class="fas fa-xmark"></i></button>
     </div>
 
+    <script src="config.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>

@@ -1,241 +1,253 @@
-const WebSocket = require('ws');
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
 const http = require('http');
-const fs = require('fs');
-const path = require('path');
+const { Server } = require('socket.io');
 
-const server = http.createServer();
-const wss = new WebSocket.Server({ server });
+// ─── App Setup ────────────────────────────────────────────────────────────────
+const app = express();
+const httpServer = http.createServer(app);
 
-let rooms = {}; // { roomId: [ws, ...] }
-let users = {}; // { ws: { username, room } }
+// ─── Environment & CORS Setup ─────────────────────────────────────────────────
+let FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN;
+const isProduction = process.env.NODE_ENV === 'production' || process.env.RENDER;
 
-wss.on('connection', function connection(ws) {
-    console.log('[SERVER] New client connected');
-    
-    ws.on('message', function incoming(data) {
-        try {
-            const msg = JSON.parse(data.toString());
-            
-            switch (msg.type) {
-                case 'join':
-                    handleJoin(ws, msg);
-                    break;
-                case 'message':
-                    handleMessage(ws, msg);
-                    break;
-                case 'typing_start':
-                    handleTypingStart(ws, msg);
-                    break;
-                case 'typing_stop':
-                    handleTypingStop(ws, msg);
-                    break;
-                default:
-                    console.log('[SERVER] Unknown message type:', msg.type);
-            }
-        } catch (e) {
-            console.error('[SERVER] Error parsing message:', e);
-        }
-    });
+if (!FRONTEND_ORIGIN) {
+    if (isProduction) {
+        console.error('FATAL ERROR: process.env.FRONTEND_ORIGIN is required in production. Please set it in your Render environment variables.');
+        process.exit(1);
+    } else {
+        FRONTEND_ORIGIN = 'http://localhost:3000';
+        console.warn(`[WARNING] FRONTEND_ORIGIN not set. Defaulting to ${FRONTEND_ORIGIN} for local development.`);
+    }
+}
 
-    ws.on('close', function() {
-        handleDisconnect(ws);
-    });
+// Enable CORS for Express HTTP endpoints
+app.use(cors({
+    origin: FRONTEND_ORIGIN,
+    methods: ['GET', 'POST']
+}));
 
-    ws.on('error', function(error) {
-        console.error('[SERVER] WebSocket error:', error);
-    });
+const io = new Server(httpServer, {
+    cors: {
+        origin: FRONTEND_ORIGIN,
+        methods: ['GET', 'POST']
+    },
+    transports: ['websocket', 'polling']
 });
 
-function handleJoin(ws, msg) {
-    const { room, username } = msg;
-    
-    // Remove from previous room
-    if (users[ws] && users[ws].room) {
-        leaveRoom(ws, users[ws].room);
-    }
-    
-    // Join new room
-    ws.room = room;
-    users[ws] = { username: username || 'Anonymous', room: room };
-    
-    if (!rooms[room]) {
-        rooms[room] = [];
-    }
-    
-    rooms[room].push(ws);
-    
-    console.log(`[SERVER] ${users[ws].username} joined room: ${room}. Total: ${rooms[room].length}`);
-    
-    // Broadcast user joined message
-    broadcastToRoom(room, {
-        type: 'user_joined',
-        username: users[ws].username,
-        room: room,
-        timestamp: new Date().toISOString()
-    }, ws);
-    
-    // Send room info to user
-    ws.send(JSON.stringify({
-        type: 'room_joined',
-        room: room,
-        members: rooms[room].length
+// ─── Server State ─────────────────────────────────────────────────────────────
+// rooms: Map<roomId, { id, name, description, createdBy, isSystem }>
+const rooms = new Map();
+
+// socketMeta: Map<socketId, { username, roomId }>
+const socketMeta = new Map();
+
+// Default rooms (cannot be deleted)
+const DEFAULT_ROOMS = [
+    { id: 'general', name: 'General', description: 'General discussion for everyone', createdBy: 'System', isSystem: true },
+    { id: 'tech-talk', name: 'Tech Talk', description: 'Discuss technology and programming', createdBy: 'System', isSystem: true },
+    { id: 'random', name: 'Random', description: 'Random conversations and fun discussions', createdBy: 'System', isSystem: true }
+];
+
+DEFAULT_ROOMS.forEach(r => rooms.set(r.id, r));
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function getRoomList() {
+    return Array.from(rooms.values()).map(r => ({
+        ...r,
+        memberCount: getMemberCount(r.id)
     }));
 }
 
-function handleMessage(ws, msg) {
-    const user = users[ws];
-    if (!user || !user.room) {
-        console.log('[SERVER] Message from user not in room');
-        return;
+function getMemberCount(roomId) {
+    let count = 0;
+    for (const meta of socketMeta.values()) {
+        if (meta.roomId === roomId) count++;
     }
-    
-    console.log(`[SERVER] Message in room ${user.room} from ${user.username}:`, msg.content);
-    
-    // Add server timestamp and user info
-    const serverMsg = {
-        ...msg,
-        author: user.username,
-        timestamp: new Date().toISOString(),
-        id: generateMessageId()
-    };
-    
-    // Broadcast to all in the room
-    broadcastToRoom(user.room, serverMsg);
+    return count;
 }
 
-function handleTypingStart(ws, msg) {
-    const user = users[ws];
-    if (!user || !user.room) return;
-    
-    broadcastToRoom(user.room, {
-        type: 'typing_start',
-        username: user.username,
-        room: user.room
-    }, ws);
-}
-
-function handleTypingStop(ws, msg) {
-    const user = users[ws];
-    if (!user || !user.room) return;
-    
-    broadcastToRoom(user.room, {
-        type: 'typing_stop',
-        username: user.username,
-        room: user.room
-    }, ws);
-}
-
-function handleDisconnect(ws) {
-    const user = users[ws];
-    if (user) {
-        console.log(`[SERVER] ${user.username} disconnected from room: ${user.room}`);
-        
-        leaveRoom(ws, user.room);
-        
-        // Broadcast user left message
-        if (user.room && rooms[user.room]) {
-            broadcastToRoom(user.room, {
-                type: 'user_left',
-                username: user.username,
-                room: user.room,
-                timestamp: new Date().toISOString()
-            });
-        }
-        
-        delete users[ws];
+function getRoomUsers(roomId) {
+    const users = [];
+    for (const [, meta] of socketMeta) {
+        if (meta.roomId === roomId) users.push(meta.username);
     }
+    return users;
 }
 
-function leaveRoom(ws, room) {
-    if (rooms[room]) {
-        rooms[room] = rooms[room].filter(client => client !== ws);
-        
-        if (rooms[room].length === 0) {
-            delete rooms[room];
-        }
-    }
+function broadcastRoomList() {
+    io.emit('room_list', getRoomList());
 }
 
-function broadcastToRoom(room, message, excludeWs = null) {
-    if (rooms[room]) {
-        rooms[room].forEach(client => {
-            if (client !== excludeWs && client.readyState === WebSocket.OPEN) {
-                try {
-                    client.send(JSON.stringify(message));
-                } catch (error) {
-                    console.error('[SERVER] Error broadcasting message:', error);
-                }
-            }
-        });
-    }
-}
+// ─── Health Endpoint ──────────────────────────────────────────────────────────
+app.use(express.json());
 
-function generateMessageId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
-}
-
-// Static file server and health check endpoint
-server.on('request', (req, res) => {
-    if (req.url === '/health') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ 
-            status: 'ok', 
-            connections: Object.keys(users).length,
-            rooms: Object.keys(rooms).length 
-        }));
-        return;
-    }
-    
-    // Serve static files
-    let filePath = req.url === '/' ? '/index.html' : req.url;
-    const fullPath = path.join(__dirname, filePath);
-    
-    // Security check - prevent directory traversal
-    if (!fullPath.startsWith(__dirname)) {
-        res.writeHead(403);
-        res.end('Forbidden');
-        return;
-    }
-    
-    fs.readFile(fullPath, (err, data) => {
-        if (err) {
-            res.writeHead(404);
-            res.end('Not Found');
-            return;
-        }
-        
-        // Set content type based on file extension
-        const ext = path.extname(filePath);
-        const contentTypes = {
-            '.html': 'text/html',
-            '.css': 'text/css',
-            '.js': 'application/javascript',
-            '.ico': 'image/x-icon',
-            '.png': 'image/png',
-            '.jpg': 'image/jpeg',
-            '.gif': 'image/gif'
-        };
-        
-        const contentType = contentTypes[ext] || 'text/plain';
-        res.writeHead(200, { 'Content-Type': contentType });
-        res.end(data);
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        connections: socketMeta.size,
+        rooms: rooms.size
     });
 });
 
-const PORT = process.env.PORT || 3002;
-// Replace this line in your server.js:
-server.listen(PORT, '0.0.0.0', () => {
-    console.log(`[SERVER] WebSocket server running on port ${PORT}`);
-    console.log(`[SERVER] Access from mobile: ws://[YOUR-IP]:${PORT}`);
-    console.log(`[SERVER] Health check: http://[YOUR-IP]:${PORT}/health`);
+// ─── Socket.IO Events ─────────────────────────────────────────────────────────
+io.on('connection', (socket) => {
+    console.log(`[CONNECT] ${socket.id}`);
+
+    // Send full room list immediately on connect
+    socket.emit('room_list', getRoomList());
+
+    // ── Join / Switch Room ───────────────────────────────────────────────────
+    socket.on('join', ({ username, roomId }) => {
+        if (!username || !roomId) return;
+        if (!rooms.has(roomId)) {
+            socket.emit('error_msg', `Room "${roomId}" does not exist.`);
+            return;
+        }
+
+        const prev = socketMeta.get(socket.id);
+
+        // Leave previous room
+        if (prev && prev.roomId) {
+            socket.leave(prev.roomId);
+            io.to(prev.roomId).emit('user_left', { username: prev.username, roomId: prev.roomId });
+            io.to(prev.roomId).emit('room_users', { roomId: prev.roomId, users: getRoomUsers(prev.roomId) });
+        }
+
+        // Join new room
+        socketMeta.set(socket.id, { username, roomId });
+        socket.join(roomId);
+
+        console.log(`[JOIN] ${username} → ${roomId}`);
+
+        // Notify the room
+        socket.to(roomId).emit('user_joined', { username, roomId });
+        io.to(roomId).emit('room_users', { roomId, users: getRoomUsers(roomId) });
+
+        // Confirm join to the caller
+        socket.emit('join_confirmed', { roomId, roomName: rooms.get(roomId).name });
+
+        // Push fresh room list (member counts changed)
+        broadcastRoomList();
+    });
+
+    // ── Send Message ─────────────────────────────────────────────────────────
+    socket.on('message', ({ content }) => {
+        const meta = socketMeta.get(socket.id);
+        if (!meta || !content || !content.trim()) return;
+
+        const msg = {
+            id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`,
+            author: meta.username,
+            content: content.trim().slice(0, 1000),
+            roomId: meta.roomId,
+            timestamp: new Date().toISOString()
+        };
+
+        console.log(`[MSG] ${meta.username} in ${meta.roomId}: ${msg.content.slice(0, 60)}`);
+        io.to(meta.roomId).emit('message', msg);
+    });
+
+    // ── Typing ───────────────────────────────────────────────────────────────
+    socket.on('typing_start', () => {
+        const meta = socketMeta.get(socket.id);
+        if (!meta) return;
+        socket.to(meta.roomId).emit('typing_start', { username: meta.username });
+    });
+
+    socket.on('typing_stop', () => {
+        const meta = socketMeta.get(socket.id);
+        if (!meta) return;
+        socket.to(meta.roomId).emit('typing_stop', { username: meta.username });
+    });
+
+    // ── Create Room ───────────────────────────────────────────────────────────
+    socket.on('create_room', ({ name, description }) => {
+        const meta = socketMeta.get(socket.id);
+        if (!meta) return;
+        if (!name || !name.trim()) {
+            socket.emit('error_msg', 'Room name is required.');
+            return;
+        }
+
+        const id = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+        if (rooms.has(id)) {
+            socket.emit('error_msg', 'A room with that name already exists.');
+            return;
+        }
+
+        const newRoom = {
+            id,
+            name: name.trim().slice(0, 50),
+            description: (description || '').trim().slice(0, 200) || 'No description',
+            createdBy: meta.username,
+            isSystem: false
+        };
+
+        rooms.set(id, newRoom);
+        console.log(`[ROOM CREATED] ${id} by ${meta.username}`);
+
+        broadcastRoomList();
+        socket.emit('room_created', { roomId: id });
+    });
+
+    // ── Delete Room ───────────────────────────────────────────────────────────
+    socket.on('delete_room', ({ roomId }) => {
+        const meta = socketMeta.get(socket.id);
+        if (!meta) return;
+
+        const room = rooms.get(roomId);
+        if (!room) {
+            socket.emit('error_msg', 'Room not found.');
+            return;
+        }
+        if (room.isSystem) {
+            socket.emit('error_msg', 'System rooms cannot be deleted.');
+            return;
+        }
+        if (room.createdBy !== meta.username) {
+            socket.emit('error_msg', 'Only the room creator can delete it.');
+            return;
+        }
+
+        rooms.delete(roomId);
+        console.log(`[ROOM DELETED] ${roomId} by ${meta.username}`);
+
+        // Move everyone in the deleted room to General
+        io.to(roomId).emit('room_deleted', { roomId, redirectTo: 'general' });
+
+        broadcastRoomList();
+    });
+
+    // ── Disconnect ────────────────────────────────────────────────────────────
+    socket.on('disconnect', () => {
+        const meta = socketMeta.get(socket.id);
+        if (meta) {
+            console.log(`[DISCONNECT] ${meta.username}`);
+            if (meta.roomId) {
+                io.to(meta.roomId).emit('user_left', { username: meta.username, roomId: meta.roomId });
+                io.to(meta.roomId).emit('room_users', { roomId: meta.roomId, users: getRoomUsers(meta.roomId) });
+            }
+            socketMeta.delete(socket.id);
+            broadcastRoomList();
+        } else {
+            console.log(`[DISCONNECT] ${socket.id} (no meta)`);
+        }
+    });
 });
 
+// ─── Start ────────────────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 3001;
+httpServer.listen(PORT, '0.0.0.0', () => {
+    console.log(`[SERVER] Running on port ${PORT}`);
+    console.log(`[SERVER] Health: http://localhost:${PORT}/health`);
+    console.log(`[SERVER] CORS allowed origin: ${FRONTEND_ORIGIN}`);
+});
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-    console.log('[SERVER] Shutting down gracefully...');
-    server.close(() => {
-        console.log('[SERVER] Server closed');
-        process.exit(0);
-    });
+    console.log('[SERVER] Shutting down...');
+    httpServer.close(() => process.exit(0));
 });

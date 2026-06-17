@@ -1,77 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatApp - Login</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
+    <title>ChatChime — Sign In</title>
+    <meta name="description" content="ChatChime: real-time multi-room chat. Sign in to start chatting.">
+    <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body class="login-body">
     <div class="login-container">
         <div class="login-card">
-            <!-- Header -->
             <div class="login-header">
-                <i class="chat-icon fas fa-comments"></i>
-                <h1>ChatApp</h1>
-                <p>Join the conversation with friends and colleagues</p>
+                <div class="login-logo">
+                    <i class="fas fa-comment-dots"></i>
+                </div>
+                <h1>ChatChime</h1>
+                <p>Real-time group chat, no account required</p>
             </div>
 
-            <!-- Login Form -->
             <form class="login-form" onsubmit="return false;">
-                <div class="input-group">
-                    <input 
-                        type="text" 
-                        id="username" 
-                        placeholder="Enter your username"
-                        maxlength="20"
-                        autocomplete="username"
-                        required
-                    >
-                    <i class="input-icon fas fa-user"></i>
-                    <div class="input-border"></div>
+                <div class="field-group">
+                    <label for="username">Username</label>
+                    <div class="field-wrap">
+                        <i class="fas fa-user field-icon"></i>
+                        <input type="text" id="username" placeholder="e.g. alex_dev" maxlength="20"
+                            autocomplete="username" autocapitalize="none" spellcheck="false" required>
+                    </div>
+                    <div class="field-hint">3–20 characters · letters, numbers, underscores</div>
+                    <div class="error-message" id="error-message"></div>
                 </div>
-                <div class="error-message" id="error-message"></div>
-                
-                <button type="button" class="login-btn" id="login-btn">
-                    <span>Join Chat</span>
+
+                <button type="button" class="btn-primary full-width" id="login-btn">
+                    Enter Chat
                     <i class="fas fa-arrow-right"></i>
                 </button>
             </form>
 
-            <!-- Features -->
             <div class="login-features">
-                <div class="feature">
-                    <i class="fas fa-comments"></i>
-                    <span>Real-time Chat</span>
-                </div>
-                <div class="feature">
-                    <i class="fas fa-users"></i>
-                    <span>Multiple Rooms</span>
-                </div>
-                <div class="feature">
-                    <i class="fas fa-smile"></i>
-                    <span>Emoji Support</span>
-                </div>
-            </div>
-
-            <!-- Footer -->
-            <div class="login-footer">
-                <p>Enter a username between 3-20 characters (letters, numbers, underscores only)</p>
+                <div class="feature-pill"><i class="fas fa-comments"></i> Multi-room</div>
+                <div class="feature-pill"><i class="fas fa-clock"></i> Real-time</div>
+                <div class="feature-pill"><i class="fas fa-mobile-alt"></i> Mobile ready</div>
             </div>
         </div>
     </div>
 
-    <!-- Loading Overlay -->
     <div class="loading-overlay" id="loading-overlay">
         <div class="loading-spinner">
-            <i class="fas fa-spinner fa-spin"></i>
-            <p>Joining chat...</p>
+            <i class="fas fa-circle-notch fa-spin"></i>
+            <p>Joining…</p>
         </div>
     </div>
 
+    <script src="config.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>
